@@ -28,6 +28,13 @@ type Props = {
 
 const STORAGE_KEY = "spgps-sidebar-collapsed";
 
+async function handleSignOut() {
+  // Avoid Auth.js absolute redirects to http://0.0.0.0:3000 when the
+  // server is bound with -H 0.0.0.0 — keep the browser's current host.
+  await signOut({ redirect: false });
+  window.location.assign("/login");
+}
+
 const mainLinks = [
   { href: "/map", label: "ตำแหน่ง", icon: Map },
   { href: "/history", label: "ประวัติ", icon: History },
@@ -249,7 +256,7 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
                 ? "mx-auto mt-0"
                 : "mt-2 h-8 w-full justify-start px-2 text-[13px]"
             )}
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => void handleSignOut()}
             title="ออกจากระบบ"
             aria-label="ออกจากระบบ"
           >
@@ -310,7 +317,7 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
             <Button
               variant="ghost"
               className="mt-2 h-10 w-full justify-start gap-2.5 px-3 text-[13px] text-muted-foreground"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => void handleSignOut()}
             >
               <LogOut className="size-4" />
               ออกจากระบบ

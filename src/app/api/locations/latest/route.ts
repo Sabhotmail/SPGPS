@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getAccessibleDeviceIds } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 function serializeDeviceMeta(d: {
@@ -35,6 +36,14 @@ function serializeDeviceMeta(d: {
   };
 }
 
+type LatestRow = {
+  deviceId: string;
+  latitude: Prisma.Decimal;
+  longitude: Prisma.Decimal;
+  accuracy: Prisma.Decimal | null;
+  recordedAt: Date;
+};
+
 export async function GET() {
   const session = await auth();
   if (!session?.user) {
@@ -46,19 +55,44 @@ export async function GET() {
     session.user.role
   );
 
-  const devices = await prisma.device.findMany({
-    where: { id: { in: deviceIds } },
-    include: {
-      groups: {
-        include: { group: { select: { id: true, name: true } } },
+  if (deviceIds.length === 0) {
+    return NextResponse.json({ devices: [] });
+  }
+
+  const [devices, latestRows] = await Promise.all([
+    prisma.device.findMany({
+      where: { id: { in: deviceIds } },
+      include: {
+        groups: {
+          include: { group: { select: { id: true, name: true } } },
+        },
       },
-      locationRecords: {
-        orderBy: { recordedAt: "desc" },
-        take: 1,
+      orderBy: { employeeName: "asc" },
+    }),
+    prisma.$queryRaw<LatestRow[]>`
+      SELECT DISTINCT ON (device_id)
+        device_id AS "deviceId",
+        latitude,
+        longitude,
+        accuracy,
+        recorded_at AS "recordedAt"
+      FROM location_records
+      WHERE device_id IN (${Prisma.join(deviceIds)})
+      ORDER BY device_id, recorded_at DESC
+    `,
+  ]);
+
+  const latestByDevice = new Map(
+    latestRows.map((row) => [
+      row.deviceId,
+      {
+        latitude: Number(row.latitude),
+        longitude: Number(row.longitude),
+        accuracy: row.accuracy != null ? Number(row.accuracy) : null,
+        recordedAt: row.recordedAt.toISOString(),
       },
-    },
-    orderBy: { employeeName: "asc" },
-  });
+    ])
+  );
 
   const result = devices.map((d) => ({
     id: d.id,
@@ -68,16 +102,7 @@ export async function GET() {
     lastSeenAt: d.lastSeenAt?.toISOString() ?? null,
     ...serializeDeviceMeta(d),
     groups: d.groups.map((g) => g.group),
-    latestLocation: d.locationRecords[0]
-      ? {
-          latitude: Number(d.locationRecords[0].latitude),
-          longitude: Number(d.locationRecords[0].longitude),
-          accuracy: d.locationRecords[0].accuracy
-            ? Number(d.locationRecords[0].accuracy)
-            : null,
-          recordedAt: d.locationRecords[0].recordedAt.toISOString(),
-        }
-      : null,
+    latestLocation: latestByDevice.get(d.id) ?? null,
   }));
 
   return NextResponse.json({ devices: result });

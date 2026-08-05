@@ -94,6 +94,25 @@ export default function AdminUsersPage() {
     load();
   }
 
+  async function sendResetLink(user: User) {
+    setMessage("");
+    const res = await fetch(`/api/admin/users/${user.id}/reset-password`, {
+      method: "POST",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setMessage(
+        typeof data.message === "string"
+          ? data.message
+          : `ส่งลิงก์รีเซ็ตไปที่ ${user.email} แล้ว`
+      );
+    } else {
+      setMessage(
+        typeof data.error === "string" ? data.error : "ส่งลิงก์รีเซ็ตไม่สำเร็จ"
+      );
+    }
+  }
+
   return (
     <div className="animate-fade-up">
       <PageHeader
@@ -246,14 +265,25 @@ export default function AdminUsersPage() {
                   {u.isActive ? "Active" : "Inactive"}
                 </td>
                 <td className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-[12px]"
-                    onClick={() => toggleActive(u)}
-                  >
-                    {u.isActive ? "ปิดใช้งาน" : "เปิดใช้งาน"}
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[12px]"
+                      disabled={!u.isActive}
+                      onClick={() => sendResetLink(u)}
+                    >
+                      ส่งลิงก์รีเซ็ต
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[12px]"
+                      onClick={() => toggleActive(u)}
+                    >
+                      {u.isActive ? "ปิดใช้งาน" : "เปิดใช้งาน"}
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}

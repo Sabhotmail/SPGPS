@@ -87,7 +87,8 @@ Concurrency เริ่มต้น 8 — poll ปกติยังใช้�
    (ดึงรายชื่อ + รายละเอียดเครื่องจาก `/api/v3/devices/{id}` เช่น แบต, Online/Offline, รุ่น — ใช้เวลา ~2–3 นาที สำหรับ ~73 เครื่อง)  
    ปุ่ม **รายละเอียด** ต่อแถว = รีเฟรชเครื่องเดียว  
 3. **Admin → กลุ่ม** → จัดกลุ่มพนักงาน
-4. **Admin → ผู้ใช้** → กำหนดสิทธิ์ Viewer
+4. **Admin → ผู้ใช้** → กำหนดสิทธิ์ Viewer  
+   (มีปุ่ม **ส่งลิงก์รีเซ็ต** — ส่งอีเมลผ่าน O365 SMTP; ผู้ใช้ทั่วไปใช้ **/forgot-password**)
 
 ## Production
 
@@ -97,6 +98,8 @@ npm start
 ```
 
 `dev` / `start` bind ที่ `0.0.0.0:3000` เพื่อให้เข้าจากเครื่องอื่นในเครือข่ายได้ (รวม Tailscale)
+
+อย่าเปิด URL ที่ Next แสดงเป็น `http://0.0.0.0:3000` ในเบราว์เซอร์ — ใช้ `http://localhost:3000` หรือ Tailscale IP แทน
 
 ### เข้าผ่าน Tailscale
 
@@ -129,6 +132,11 @@ npm run worker:poll
 | `AUTH_SECRET` | NextAuth secret (min 32 chars) |
 | `AUTH_TRUST_HOST` | `true` — จำเป็นสำหรับ `next start` / Tailscale |
 | `AUTH_URL` / `NEXTAUTH_URL` | **ไม่ต้องตั้ง** (เว้นว่าง) — ถ้าตั้งเป็น `localhost` จะ redirect ไป localhost ตลอดตอนเข้าผ่าน Tailscale |
+| `SMTP_HOST` | SMTP server (ค่าเริ่มต้นใช้งานกับ O365: `smtp.office365.com`) |
+| `SMTP_PORT` | พอร์ต SMTP (ค่าเริ่มต้น `587`) |
+| `SMTP_USER` | อีเมลกล่อง O365 ที่ใช้ส่ง (ต้องเปิด SMTP AUTH) |
+| `SMTP_PASS` | รหัสผ่านกล่อง หรือ App password |
+| `SMTP_FROM` | From ที่แสดงในเมล (ควรเป็นอีเมลเดียวกับ `SMTP_USER`) |
 | `POLL_INTERVAL_MS` | Interval poll (default 180000 = 3 นาที). ถูกข้ามถ้ามี POLL_SCHEDULE |
 | `POLL_SCHEDULE` | เวลาที่กำหนด เช่น `08:00,12:00,17:00` (ถ้าตั้งค่าจะใช้โหมดนี้) |
 | `POLL_TZ` | Timezone ของ schedule (default Asia/Bangkok) |
