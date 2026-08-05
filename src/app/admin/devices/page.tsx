@@ -1,0 +1,283 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { formatDateTime } from "@/lib/types";
+import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+type Device = {
+  id: string;
+  scalefusionDeviceId: string;
+  deviceName: string;
+  employeeName: string | null;
+  isActive: boolean;
+  lastSeenAt: string | null;
+  groups: { id: string; name: string }[];
+};
+
+type SyncLog = {
+  id: string;
+  syncType: string;
+  status: string;
+  recordsAdded: number;
+  errorMessage: string | null;
+  createdAt: string;
+};
+
+export default function AdminDevicesPage() {
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [logs, setLogs] = useState<SyncLog[]>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function load() {
+    const [devicesRes, logsRes] = await Promise.all([
+      fetch("/api/admin/devices"),
+      fetch("/api/admin/sync-logs"),
+    ]);
+    if (devicesRes.ok) {
+      const data = await devicesRes.json();
+      setDevices(data.devices ?? []);
+    }
+    if (logsRes.ok) {
+      const data = await logsRes.json();
+      setLogs(data.logs ?? []);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function syncDevices() {
+    setSyncing(true);
+    setMessage("");
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "devices" }),
+    });
+    setSyncing(false);
+    if (res.ok) {
+      const data = await res.json();
+      setMessage(`Sync แล้ว ${data.synced} อุปกรณ์ (${data.created} ใหม่)`);
+      load();
+    } else {
+      const data = await res.json();
+      setMessage(data.error ?? "Sync ล้มเหลว");
+    }
+  }
+
+  async function pollNow() {
+    setSyncing(true);
+    setMessage("");
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "poll" }),
+    });
+    setSyncing(false);
+    if (res.ok) {
+      const data = await res.json();
+      setMessage(`Poll แล้ว ${data.recordsAdded} records`);
+      load();
+    } else {
+      const data = await res.json();
+      setMessage(data.error ?? "Poll ล้มเหลว");
+    }
+  }
+
+  async function backfillRecent() {
+    if (
+      !confirm(
+        "ดึงประวัติย้อนหลัง 1 วันจาก Scalefusion?\n\nเต็ม ~30 วันใช้คำสั่ง:\nnpm run worker:backfill"
+      )
+    ) {
+      return;
+    }
+    setSyncing(true);
+    setMessage("กำลัง backfill... อาจใช้เวลาหลายนาที");
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "backfill", days: 1 }),
+    });
+    setSyncing(false);
+    if (res.ok) {
+      const data = await res.json();
+      setMessage(
+        `Backfill แล้ว +${data.recordsAdded} records · API ${data.requestsMade} ครั้ง` +
+          (data.note ? ` · ${data.note}` : "")
+      );
+      load();
+    } else {
+      const data = await res.json();
+      setMessage(data.error ?? "Backfill ล้มเหลว");
+    }
+  }
+
+  async function updateDevice(
+    id: string,
+    data: { employeeName?: string; isActive?: boolean }
+  ) {
+    await fetch(`/api/admin/devices/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    load();
+  }
+
+  const activeCount = devices.filter((d) => d.isActive).length;
+
+  return (
+    <div className="animate-fade-up">
+      <PageHeader
+        title="อุปกรณ์"
+        description="Sync จาก Scalefusion ตั้งชื่อพนักงาน และดึงประวัติย้อนหลังเก็บในฐานข้อมูล"
+        actions={
+          <>
+            <Button
+              onClick={syncDevices}
+              disabled={syncing}
+              className="h-8 text-[13px]"
+            >
+              Sync Scalefusion
+            </Button>
+            <Button
+              variant="outline"
+              onClick={pollNow}
+              disabled={syncing}
+              className="h-8 text-[13px]"
+            >
+              Poll now
+            </Button>
+            <Button
+              variant="outline"
+              onClick={backfillRecent}
+              disabled={syncing}
+              className="h-8 text-[13px]"
+            >
+              Backfill 1 วัน
+            </Button>
+          </>
+        }
+        meta={
+          <span className="text-[13px] tabular-nums text-muted-foreground">
+            {devices.length} อุปกรณ์ · {activeCount} ติดตาม
+          </span>
+        }
+      />
+
+      {message && (
+        <p className="mb-6 text-[13px] text-muted-foreground">{message}</p>
+      )}
+
+      <div className="overflow-x-auto border">
+        <table className="workspace-table">
+          <thead>
+            <tr>
+              <th>SF ID</th>
+              <th>อุปกรณ์</th>
+              <th>พนักงาน</th>
+              <th>Last seen</th>
+              <th>กลุ่ม</th>
+              <th>ติดตาม</th>
+            </tr>
+          </thead>
+          <tbody>
+            {devices.map((d) => (
+              <tr key={d.id}>
+                <td className="font-mono text-[12px] text-muted-foreground">
+                  {d.scalefusionDeviceId}
+                </td>
+                <td className="text-[13px]">{d.deviceName}</td>
+                <td>
+                  <Input
+                    defaultValue={d.employeeName ?? ""}
+                    onBlur={(e) =>
+                      updateDevice(d.id, { employeeName: e.target.value })
+                    }
+                    className="h-8 max-w-[180px] text-[13px]"
+                  />
+                </td>
+                <td className="text-[12px] tabular-nums text-muted-foreground">
+                  {d.lastSeenAt ? formatDateTime(d.lastSeenAt) : "—"}
+                </td>
+                <td className="text-[12px] text-muted-foreground">
+                  {d.groups.map((g) => g.name).join(", ") || "—"}
+                </td>
+                <td>
+                  <Button
+                    variant={d.isActive ? "secondary" : "outline"}
+                    size="sm"
+                    className="h-7 text-[12px]"
+                    onClick={() =>
+                      updateDevice(d.id, { isActive: !d.isActive })
+                    }
+                  >
+                    {d.isActive ? "เปิด" : "ปิด"}
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <section className="mt-12">
+        <h2 className="mb-4 text-[15px] font-semibold">Sync logs</h2>
+        <div className="overflow-x-auto border">
+          <table className="workspace-table">
+            <thead>
+              <tr>
+                <th>เวลา</th>
+                <th>ประเภท</th>
+                <th>สถานะ</th>
+                <th>Records</th>
+                <th>Error</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="py-8 text-center text-[13px] text-muted-foreground"
+                  >
+                    ยังไม่มี log
+                  </td>
+                </tr>
+              ) : (
+                logs.map((l) => (
+                  <tr key={l.id}>
+                    <td className="text-[12px] tabular-nums text-muted-foreground">
+                      {formatDateTime(l.createdAt)}
+                    </td>
+                    <td className="text-[12px]">{l.syncType}</td>
+                    <td className="text-[12px]">
+                      <span
+                        className={
+                          l.status === "SUCCESS"
+                            ? "text-foreground"
+                            : "text-destructive"
+                        }
+                      >
+                        {l.status}
+                      </span>
+                    </td>
+                    <td className="tabular-nums">{l.recordsAdded}</td>
+                    <td className="text-[12px] text-destructive">
+                      {l.errorMessage ?? "—"}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}

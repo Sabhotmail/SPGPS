@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  VIEWER
+}
+
+enum SyncStatus {
+  SUCCESS
+  FAILURE
+}
+
+enum SyncType {
+  DEVICE_SYNC
+  LOCATION_POLL
+  HISTORY_BACKFILL
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(VIEWER)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  groupAccess UserGroupAccess[]
+
+  @@map("users")
+}
+
+model EmployeeGroup {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  devices     GroupDevice[]
+  userAccess  UserGroupAccess[]
+
+  @@map("employee_groups")
+}
+
+model Device {
+  id                   String    @id @default(uuid())
+  scalefusionDeviceId  BigInt    @unique @map("scalefusion_device_id")
+  deviceName           String    @map("device_name")
+  employeeName         String?   @map("employee_name")
+  isActive             Boolean   @default(true) @map("is_active")
+  lastSeenAt           DateTime? @map("last_seen_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  groups           GroupDevice[]
+  locationRecords  LocationRecord[]
+
+  @@map("devices")
+}
+
+model GroupDevice {
+  groupId  String @map("group_id")
+  deviceId String @map("device_id")
+
+  group  EmployeeGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  device Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, deviceId])
+  @@map("group_devices")
+}
+
+model UserGroupAccess {
+  userId  String @map("user_id")
+  groupId String @map("group_id")
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group EmployeeGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+  @@map("user_group_access")
+}
+
+model LocationRecord {
+  id         String   @id @default(uuid())
+  deviceId   String   @map("device_id")
+  latitude   Decimal  @db.Decimal(10, 7)
+  longitude  Decimal  @db.Decimal(10, 7)
+  accuracy   Decimal? @db.Decimal(10, 2)
+  recordedAt DateTime @map("recorded_at")
+  fetchedAt  DateTime @default(now()) @map("fetched_at")
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, recordedAt, latitude, longitude])
+  @@index([deviceId, recordedAt(sort: Desc)])
+  @@map("location_records")
+}
+
+model SyncLog {
+  id           String     @id @default(uuid())
+  syncType     SyncType   @map("sync_type")
+  status       SyncStatus
+  recordsAdded Int        @default(0) @map("records_added")
+  errorMessage String?    @map("error_message")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([createdAt(sort: Desc)])
+  @@map("sync_logs")
+}
