@@ -1,6 +1,8 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
+  // Required for `next start` / reverse proxies (Auth.js UntrustedHost)
+  trustHost: true,
   pages: {
     signIn: "/login",
   },

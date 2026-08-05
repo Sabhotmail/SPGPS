@@ -50,12 +50,12 @@
   }
 
   .workspace-table thead th {
-    @apply border-b px-4 py-2.5 text-left text-xs font-medium text-muted-foreground;
+    @apply border-b px-3 py-2.5 text-left text-xs font-medium text-muted-foreground sm:px-4;
     background-color: color-mix(in oklch, var(--muted) 30%, transparent);
   }
 
   .workspace-table tbody td {
-    @apply border-b px-4 py-3 align-middle;
+    @apply border-b px-3 py-3 align-middle sm:px-4;
   }
 
   .workspace-table tbody tr:last-child td {
@@ -94,7 +94,8 @@
 }
 
 .leaflet-popup-content-wrapper {
-  @apply rounded-md border border-border bg-background shadow-md;
+  @apply overflow-hidden rounded-lg border border-border bg-background shadow-md;
+  padding: 0;
 }
 
 .leaflet-popup-content {
@@ -103,22 +104,27 @@
   @apply leading-snug;
 }
 
+.leaflet-popup-tip-container,
 .leaflet-popup-tip {
-  @apply hidden;
+  display: none !important;
 }
 
 .leaflet-container a.leaflet-popup-close-button {
-  @apply top-1.5 right-1.5 text-muted-foreground;
+  @apply top-2 right-2 z-10 flex size-6 items-center justify-center rounded-md text-[16px] leading-none text-muted-foreground no-underline;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  @apply bg-accent text-foreground;
 }
 
 .spgps-popup {
-  min-width: 220px;
-  max-width: 280px;
-  padding: 12px 14px 12px;
+  min-width: min(220px, calc(100vw - 48px));
+  max-width: min(280px, calc(100vw - 32px));
+  padding: 14px 16px 14px;
 }
 
 .spgps-popup-head {
-  padding-right: 16px;
+  padding-right: 20px;
 }
 
 .spgps-popup-title {
@@ -138,11 +144,11 @@
 }
 
 .spgps-popup-meta {
-  @apply mt-2.5 space-y-1 border-t border-border pt-2.5;
+  @apply mt-3 space-y-1.5 border-t border-border pt-3;
 }
 
 .spgps-popup-meta > div {
-  @apply grid grid-cols-[52px_1fr] gap-2 text-[11px];
+  @apply grid grid-cols-[64px_1fr] gap-2 text-[11px];
 }
 
 .spgps-popup-meta dt {
@@ -158,7 +164,7 @@
 }
 
 .spgps-popup-actions {
-  @apply mt-3 flex items-center gap-3 border-t border-border pt-2.5;
+  @apply mt-3 flex items-center gap-3 border-t border-border pt-3;
 }
 
 .spgps-popup-actions a {

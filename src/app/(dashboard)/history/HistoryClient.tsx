@@ -100,7 +100,8 @@ export default function HistoryClient() {
       if (res.ok) {
         const data = await res.json();
         setLocations(data.locations ?? []);
-        setSliderIndex(0);
+        const locs = (data.locations ?? []) as HistoryLocation[];
+        setSliderIndex(Math.max(0, locs.length - 1));
         setSelectedStopId(null);
       }
     } finally {
@@ -159,9 +160,9 @@ export default function HistoryClient() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <header className="relative z-[1100] mx-5 mt-5 flex shrink-0 flex-wrap items-end gap-3 rounded-lg border bg-background px-4 py-3">
-        <div className="min-w-0 flex-1 basis-[220px]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <header className="relative z-[1100] mx-3 mt-3 flex shrink-0 flex-wrap items-end gap-3 rounded-lg border bg-background px-3 py-3 sm:mx-5 sm:mt-5 sm:px-4">
+        <div className="min-w-0 flex-1 basis-full sm:basis-[220px]">
           <p className="mb-1 text-[11px] text-muted-foreground">พนักงาน</p>
           <DeviceSearchSelect
             devices={deviceOptions}
@@ -169,7 +170,7 @@ export default function HistoryClient() {
             onChange={setDeviceId}
           />
         </div>
-        <div className="w-[170px]">
+        <div className="w-[calc(50%-0.375rem)] min-w-0 sm:w-[170px]">
           <p className="mb-1 text-[11px] text-muted-foreground">วันที่</p>
           <DatePickerWithMarkers
             value={date}
@@ -181,11 +182,11 @@ export default function HistoryClient() {
         <Button
           onClick={fetchHistory}
           disabled={!deviceId || loading}
-          className="h-8"
+          className="h-9 flex-1 sm:h-8 sm:flex-none"
         >
           {loading ? "กำลังโหลด..." : "โหลด"}
         </Button>
-        <div className="ml-auto hidden min-w-0 text-right sm:block">
+        <div className="ml-auto hidden min-w-0 text-right md:block">
           <p className="truncate text-[13px] font-medium">
             {selectedDevice
               ? selectedDevice.employeeName || selectedDevice.deviceName
@@ -203,9 +204,9 @@ export default function HistoryClient() {
         </div>
       </header>
 
-      <div className="relative flex min-h-0 flex-1 items-start gap-4 p-5">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <div className="relative h-[min(58vh,560px)] min-h-[320px] shrink-0 overflow-hidden rounded-lg border bg-background">
+      <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-3 sm:p-5 lg:flex-row lg:items-start lg:overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 lg:overflow-hidden">
+          <div className="relative h-[42vh] min-h-[240px] shrink-0 overflow-hidden rounded-lg border bg-background sm:h-[min(50vh,480px)] lg:h-[min(58vh,560px)] lg:min-h-[320px]">
             <HistoryMap
               locations={locations}
               highlightIndex={sliderIndex}
@@ -217,7 +218,7 @@ export default function HistoryClient() {
             />
 
             {!deviceId && (
-              <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center">
+              <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center px-3">
                 <p className="rounded-md border bg-background/90 px-3 py-1.5 text-[12px] text-muted-foreground shadow-sm">
                   ค้นหาและเลือกพนักงานด้านบน
                 </p>
@@ -225,8 +226,8 @@ export default function HistoryClient() {
             )}
 
             {deviceId && !loading && locations.length === 0 && (
-              <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center">
-                <p className="rounded-md border bg-background/90 px-3 py-1.5 text-[12px] text-muted-foreground shadow-sm">
+              <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center px-3">
+                <p className="rounded-md border bg-background/90 px-3 py-1.5 text-center text-[12px] text-muted-foreground shadow-sm">
                   ไม่พบข้อมูลในวันที่ {date}
                   {Object.keys(datesWithData).length === 0
                     ? " — รอ backfill หรือ poll ก่อน"
@@ -236,8 +237,7 @@ export default function HistoryClient() {
             )}
           </div>
 
-          {/* Reserve slider chrome height so map size stays stable after load */}
-          <div className="shrink-0 rounded-lg border bg-background px-4 py-3 min-h-[118px]">
+          <div className="shrink-0 rounded-lg border bg-background px-4 py-3">
             {locations.length > 0 && currentPoint ? (
               <>
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -247,6 +247,11 @@ export default function HistoryClient() {
                       {sliderIndex + 1}
                     </span>{" "}
                     / {locations.length}
+                    {sliderIndex === locations.length - 1 && (
+                      <span className="ml-2 text-[11px] text-foreground">
+                        · ล่าสุด
+                      </span>
+                    )}
                   </p>
                   <p className="text-[13px] tabular-nums text-muted-foreground">
                     {formatDateTime(currentPoint.recordedAt)}
@@ -263,16 +268,16 @@ export default function HistoryClient() {
                     setSliderIndex(Array.isArray(v) ? (v[0] ?? 0) : v);
                   }}
                 />
-                <dl className="mt-3 grid grid-cols-3 gap-4">
+                <dl className="mt-3 grid grid-cols-3 gap-3 sm:gap-4">
                   <div>
                     <dt className="text-[11px] text-muted-foreground">Lat</dt>
-                    <dd className="mt-0.5 text-[13px] tabular-nums">
+                    <dd className="mt-0.5 text-[12px] tabular-nums sm:text-[13px]">
                       {currentPoint.latitude.toFixed(5)}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-[11px] text-muted-foreground">Lng</dt>
-                    <dd className="mt-0.5 text-[13px] tabular-nums">
+                    <dd className="mt-0.5 text-[12px] tabular-nums sm:text-[13px]">
                       {currentPoint.longitude.toFixed(5)}
                     </dd>
                   </div>
@@ -280,7 +285,7 @@ export default function HistoryClient() {
                     <dt className="text-[11px] text-muted-foreground">
                       ความเร็ว
                     </dt>
-                    <dd className="mt-0.5 text-[13px] tabular-nums">
+                    <dd className="mt-0.5 text-[12px] tabular-nums sm:text-[13px]">
                       {speedKmh ? `${speedKmh} km/h` : "—"}
                     </dd>
                   </div>
@@ -309,9 +314,8 @@ export default function HistoryClient() {
           </div>
         </div>
 
-        {/* Always reserve stop column when a device is selected — prevents Leaflet gray strip */}
         {deviceId ? (
-          <aside className="flex h-[min(58vh,560px)] min-h-[320px] w-[280px] shrink-0 flex-col overflow-hidden rounded-lg border bg-background self-start">
+          <aside className="flex max-h-[40vh] w-full shrink-0 flex-col overflow-hidden rounded-lg border bg-background lg:h-[min(58vh,560px)] lg:max-h-none lg:min-h-[320px] lg:w-[280px] lg:self-start">
             <div className="shrink-0 border-b px-4 py-3">
               <p className="text-[13px] font-medium">จุดที่หยุด</p>
               <p className="mt-0.5 text-[11px] text-muted-foreground">

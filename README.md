@@ -96,6 +96,23 @@ npm run build
 npm start
 ```
 
+`dev` / `start` bind ที่ `0.0.0.0:3000` เพื่อให้เข้าจากเครื่องอื่นในเครือข่ายได้ (รวม Tailscale)
+
+### เข้าผ่าน Tailscale
+
+1. ให้เครื่องนี้และมือถือ/เครื่องอื่นอยู่ใน Tailscale เดียวกัน
+2. รัน `npm run start` (หรือ `npm run dev`)
+3. เปิดจากเครื่องอื่น:
+
+```text
+http://100.106.34.125:3000
+```
+
+หรือชื่อเครื่อง Tailscale เช่น `http://it-thanuphat-nb:3000` (ถ้า MagicDNS เปิดอยู่)
+
+มี `AUTH_TRUST_HOST=true` และ**อย่าตั้ง** `AUTH_URL`/`NEXTAUTH_URL` เป็น localhost — ไม่เช่นนั้น login จะเด้งกลับ localhost  
+ถ้า Windows Firewall ถาม ให้ Allow port **3000** สำหรับ Node
+
 รัน worker แยก (PM2, Windows Service, หรือ systemd):
 
 ```bash
@@ -110,7 +127,8 @@ npm run worker:poll
 | `SCALEFUSION_API_KEY` | Scalefusion API key |
 | `SCALEFUSION_BASE_URL` | Default: https://api.scalefusion.com |
 | `AUTH_SECRET` | NextAuth secret (min 32 chars) |
-| `NEXTAUTH_URL` | App URL |
+| `AUTH_TRUST_HOST` | `true` — จำเป็นสำหรับ `next start` / Tailscale |
+| `AUTH_URL` / `NEXTAUTH_URL` | **ไม่ต้องตั้ง** (เว้นว่าง) — ถ้าตั้งเป็น `localhost` จะ redirect ไป localhost ตลอดตอนเข้าผ่าน Tailscale |
 | `POLL_INTERVAL_MS` | Interval poll (default 180000 = 3 นาที). ถูกข้ามถ้ามี POLL_SCHEDULE |
 | `POLL_SCHEDULE` | เวลาที่กำหนด เช่น `08:00,12:00,17:00` (ถ้าตั้งค่าจะใช้โหมดนี้) |
 | `POLL_TZ` | Timezone ของ schedule (default Asia/Bangkok) |

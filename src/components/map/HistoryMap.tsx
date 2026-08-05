@@ -26,6 +26,20 @@ const highlightIcon = L.divIcon({
   iconAnchor: [7, 7],
 });
 
+const startIcon = L.divIcon({
+  className: "spgps-map-icon",
+  html: `<div style="background:#fff;width:22px;height:22px;border-radius:50%;border:2px solid #171717;box-shadow:0 1px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font:700 9px/1 system-ui,sans-serif;color:#171717">เริ่ม</div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
+
+const endIcon = L.divIcon({
+  className: "spgps-map-icon",
+  html: `<div style="background:#171717;width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font:700 9px/1 system-ui,sans-serif;color:#fff">ล่าสุด</div>`,
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+});
+
 function stopIcon(index: number, active: boolean) {
   const size = active ? 26 : 22;
   const bg = active ? "#171717" : "#fff";
@@ -42,19 +56,20 @@ function stopIcon(index: number, active: boolean) {
 function MapsNavLink({
   latitude,
   longitude,
+  label = "นำทาง Google Maps",
 }: {
   latitude: number;
   longitude: number;
+  label?: string;
 }) {
   return (
     <a
       href={googleMapsNavUrl(latitude, longitude)}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-block text-xs font-medium text-primary underline-offset-2 hover:underline"
       onClick={(e) => e.stopPropagation()}
     >
-      นำทางด้วย Google Maps
+      {label}
     </a>
   );
 }
@@ -175,23 +190,34 @@ function StopMarker({
         click: () => onSelect?.(stop),
       }}
     >
-      <Popup>
-        <div className="min-w-[200px] space-y-2">
-          <div>
-            <p className="font-medium">จุดหยุด #{index + 1}</p>
-            <p className="text-xs text-muted-foreground">
+      <Popup className="spgps-device-popup" maxWidth={280} minWidth={220} offset={[0, -4]}>
+        <div className="spgps-popup">
+          <div className="spgps-popup-head">
+            <p className="spgps-popup-title">จุดหยุด #{index + 1}</p>
+            <p className="spgps-popup-sub">
               {formatDurationMinutes(stop.durationMinutes)} · {stop.pointCount}{" "}
               จุด
             </p>
           </div>
-          <div className="space-y-0.5 text-xs tabular-nums text-muted-foreground">
-            <p>เริ่ม {formatDateTime(stop.startAt)}</p>
-            <p>ถึง {formatDateTime(stop.endAt)}</p>
-            <p>
-              {stop.latitude.toFixed(5)}, {stop.longitude.toFixed(5)}
-            </p>
+          <dl className="spgps-popup-meta">
+            <div>
+              <dt>เริ่ม</dt>
+              <dd className="tabular-nums">{formatDateTime(stop.startAt)}</dd>
+            </div>
+            <div>
+              <dt>ถึง</dt>
+              <dd className="tabular-nums">{formatDateTime(stop.endAt)}</dd>
+            </div>
+            <div>
+              <dt>พิกัด</dt>
+              <dd className="tabular-nums">
+                {stop.latitude.toFixed(5)}, {stop.longitude.toFixed(5)}
+              </dd>
+            </div>
+          </dl>
+          <div className="spgps-popup-actions">
+            <MapsNavLink latitude={stop.latitude} longitude={stop.longitude} />
           </div>
-          <MapsNavLink latitude={stop.latitude} longitude={stop.longitude} />
         </div>
       </Popup>
     </Marker>
@@ -204,12 +230,14 @@ function HighlightMarker({
   total,
   speedLabel,
   autoOpen,
+  isLatest,
 }: {
   point: HistoryLocation;
   index: number;
   total: number;
   speedLabel?: string | null;
   autoOpen: boolean;
+  isLatest?: boolean;
 }) {
   const markerRef = useRef<L.Marker | null>(null);
 
@@ -224,27 +252,47 @@ function HighlightMarker({
     <Marker
       ref={markerRef}
       position={[point.latitude, point.longitude]}
-      icon={highlightIcon}
+      icon={isLatest ? endIcon : highlightIcon}
       zIndexOffset={500}
     >
-      <Popup>
-        <div className="min-w-[200px] space-y-2">
-          <div>
-            <p className="font-medium">
-              จุดที่ {index + 1} / {total}
+      <Popup className="spgps-device-popup" maxWidth={280} minWidth={220} offset={[0, -4]}>
+        <div className="spgps-popup">
+          <div className="spgps-popup-head">
+            <p className="spgps-popup-title">
+              {isLatest
+                ? `จุดล่าสุด · ${index + 1}/${total}`
+                : `จุดที่ ${index + 1} / ${total}`}
             </p>
-            <p className="text-xs tabular-nums text-muted-foreground">
+            <p className="spgps-popup-sub tabular-nums">
               {formatDateTime(point.recordedAt)}
             </p>
           </div>
-          <div className="space-y-0.5 text-xs tabular-nums text-muted-foreground">
-            <p>
-              Lat {point.latitude.toFixed(5)} · Lng {point.longitude.toFixed(5)}
-            </p>
-            {point.accuracy != null && <p>ความแม่นยำ ±{point.accuracy} ม.</p>}
-            <p>ความเร็ว {speedLabel ? `${speedLabel} km/h` : "—"}</p>
+          <dl className="spgps-popup-meta">
+            <div>
+              <dt>พิกัด</dt>
+              <dd className="tabular-nums">
+                {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+              </dd>
+            </div>
+            {point.accuracy != null && (
+              <div>
+                <dt>แม่นยำ</dt>
+                <dd>±{point.accuracy} ม.</dd>
+              </div>
+            )}
+            <div>
+              <dt>ความเร็ว</dt>
+              <dd className="tabular-nums">
+                {speedLabel ? `${speedLabel} km/h` : "—"}
+              </dd>
+            </div>
+          </dl>
+          <div className="spgps-popup-actions">
+            <MapsNavLink
+              latitude={point.latitude}
+              longitude={point.longitude}
+            />
           </div>
-          <MapsNavLink latitude={point.latitude} longitude={point.longitude} />
         </div>
       </Popup>
     </Marker>
@@ -277,6 +325,15 @@ export function HistoryMap({
   );
   const highlight = locations[highlightIndex];
   const selectedStop = stops.find((s) => s.id === selectedStopId) ?? null;
+  const startPoint = locations[0] ?? null;
+  const endPoint =
+    locations.length > 0 ? locations[locations.length - 1]! : null;
+  const showStart =
+    startPoint != null && locations.length > 1 && highlightIndex !== 0;
+  const showEnd =
+    endPoint != null &&
+    locations.length > 0 &&
+    highlightIndex !== locations.length - 1;
   const mapKey =
     locations.length > 0
       ? `${locations[0]!.id}-${locations.length}`
@@ -318,6 +375,73 @@ export function HistoryMap({
             onSelect={onSelectStop}
           />
         ))}
+        {showStart && startPoint && (
+          <Marker
+            position={[startPoint.latitude, startPoint.longitude]}
+            icon={startIcon}
+            zIndexOffset={200}
+          >
+            <Popup
+              className="spgps-device-popup"
+              maxWidth={280}
+              minWidth={220}
+              offset={[0, -4]}
+            >
+              <div className="spgps-popup">
+                <div className="spgps-popup-head">
+                  <p className="spgps-popup-title">จุดเริ่มต้น</p>
+                  <p className="spgps-popup-sub tabular-nums">
+                    {formatDateTime(startPoint.recordedAt)}
+                  </p>
+                </div>
+                <div className="spgps-popup-actions">
+                  <MapsNavLink
+                    latitude={startPoint.latitude}
+                    longitude={startPoint.longitude}
+                  />
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        )}
+        {showEnd && endPoint && (
+          <Marker
+            position={[endPoint.latitude, endPoint.longitude]}
+            icon={endIcon}
+            zIndexOffset={300}
+          >
+            <Popup
+              className="spgps-device-popup"
+              maxWidth={280}
+              minWidth={220}
+              offset={[0, -4]}
+            >
+              <div className="spgps-popup">
+                <div className="spgps-popup-head">
+                  <p className="spgps-popup-title">จุดล่าสุด</p>
+                  <p className="spgps-popup-sub tabular-nums">
+                    {formatDateTime(endPoint.recordedAt)}
+                  </p>
+                </div>
+                <dl className="spgps-popup-meta">
+                  <div>
+                    <dt>พิกัด</dt>
+                    <dd className="tabular-nums">
+                      {endPoint.latitude.toFixed(5)},{" "}
+                      {endPoint.longitude.toFixed(5)}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="spgps-popup-actions">
+                  <MapsNavLink
+                    latitude={endPoint.latitude}
+                    longitude={endPoint.longitude}
+                  />
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        )}
         {highlight && (
           <HighlightMarker
             point={highlight}
@@ -325,6 +449,7 @@ export function HistoryMap({
             total={locations.length}
             speedLabel={speedLabel}
             autoOpen={!selectedStopId}
+            isLatest={highlightIndex === locations.length - 1}
           />
         )}
       </MapContainer>

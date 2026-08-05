@@ -13,6 +13,8 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeft,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,8 +29,8 @@ type Props = {
 const STORAGE_KEY = "spgps-sidebar-collapsed";
 
 const mainLinks = [
-  { href: "/map", label: "ตำแหน่งปัจจุบัน", icon: Map },
-  { href: "/history", label: "ประวัติเส้นทาง", icon: History },
+  { href: "/map", label: "ตำแหน่ง", icon: Map },
+  { href: "/history", label: "ประวัติ", icon: History },
 ];
 
 const adminLinks = [
@@ -74,11 +76,41 @@ function NavLink({
   );
 }
 
+function MobileTabLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[10px] transition-colors",
+        active
+          ? "font-medium text-foreground"
+          : "text-muted-foreground active:text-foreground"
+      )}
+    >
+      <Icon className="size-5 shrink-0" strokeWidth={active ? 2.25 : 1.75} />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
 export function AppShell({ role, email, children, fullBleed }: Props) {
   const pathname = usePathname();
-  const bleed = fullBleed ?? pathname.startsWith("/map");
+  const bleed =
+    fullBleed ??
+    (pathname.startsWith("/map") || pathname.startsWith("/history"));
   const [collapsed, setCollapsed] = useState(false);
   const [ready, setReady] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -88,6 +120,10 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
     }
     setReady(true);
   }, []);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   function toggleCollapsed() {
     setCollapsed((prev) => {
@@ -102,10 +138,11 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
   }
 
   return (
-    <div className="flex h-svh overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
+      {/* Desktop sidebar */}
       <aside
         className={cn(
-          "flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-out",
+          "hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-out md:flex",
           ready ? (collapsed ? "w-[64px]" : "w-[220px]") : "w-[220px]"
         )}
       >
@@ -208,7 +245,9 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
             size={collapsed ? "icon-sm" : "sm"}
             className={cn(
               "text-muted-foreground hover:text-foreground",
-              collapsed ? "mx-auto mt-0" : "mt-2 h-8 w-full justify-start px-2 text-[13px]"
+              collapsed
+                ? "mx-auto mt-0"
+                : "mt-2 h-8 w-full justify-start px-2 text-[13px]"
             )}
             onClick={() => signOut({ callbackUrl: "/login" })}
             title="ออกจากระบบ"
@@ -220,16 +259,107 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
         </div>
       </aside>
 
-      <main
-        className={cn(
-          "min-h-0 min-w-0 flex-1",
-          bleed
-            ? "flex flex-col overflow-hidden"
-            : "overflow-y-auto px-10 py-8"
-        )}
-      >
-        {children}
-      </main>
+      {/* Mobile more-menu overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[1200] md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-foreground/20 animate-in fade-in-0"
+            aria-label="ปิดเมนู"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="absolute inset-x-3 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] rounded-xl border bg-background p-3 shadow-lg animate-in fade-in-0 slide-in-from-bottom-2">
+            <div className="mb-2 flex items-center justify-between px-1">
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-medium">{email}</p>
+                <p className="text-[11px] text-muted-foreground">{role}</p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="ปิด"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+            {role === "ADMIN" && (
+              <div className="space-y-0.5 border-t pt-2">
+                {adminLinks.map((link) => {
+                  const Icon = link.icon;
+                  const active = pathname.startsWith(link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[13px]",
+                        active
+                          ? "bg-accent font-medium text-foreground"
+                          : "text-muted-foreground active:bg-accent/60"
+                      )}
+                    >
+                      <Icon className="size-4" />
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              className="mt-2 h-10 w-full justify-start gap-2.5 px-3 text-[13px] text-muted-foreground"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+            >
+              <LogOut className="size-4" />
+              ออกจากระบบ
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <main
+          className={cn(
+            "min-h-0 min-w-0 flex-1",
+            bleed
+              ? "flex flex-col overflow-hidden"
+              : "overflow-y-auto px-4 py-5 md:px-10 md:py-8",
+            // Leave room for mobile bottom tabs
+            "pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
+          )}
+        >
+          {children}
+        </main>
+
+        {/* Mobile bottom tabs */}
+        <nav
+          className="fixed inset-x-0 bottom-0 z-[1100] flex border-t bg-background/95 backdrop-blur-sm md:hidden"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          {mainLinks.map((link) => (
+            <MobileTabLink
+              key={link.href}
+              {...link}
+              active={pathname.startsWith(link.href)}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            className={cn(
+              "flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[10px] transition-colors",
+              mobileMenuOpen || pathname.startsWith("/admin")
+                ? "font-medium text-foreground"
+                : "text-muted-foreground"
+            )}
+          >
+            <Menu className="size-5 shrink-0" />
+            <span>เมนู</span>
+          </button>
+        </nav>
+      </div>
     </div>
   );
 }

@@ -157,7 +157,7 @@ function DeviceMarker({
       eventHandlers={{ click: () => onSelect(device.id) }}
       zIndexOffset={active ? 1000 : 0}
     >
-      <Popup className="spgps-device-popup" maxWidth={280} minWidth={220}>
+      <Popup className="spgps-device-popup" maxWidth={280} minWidth={220} offset={[0, -4]}>
         <div className="spgps-popup">
           <div className="spgps-popup-head">
             <p className="spgps-popup-title">{device.employeeName}</p>
