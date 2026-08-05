@@ -43,7 +43,23 @@ npm run dev
 npm run worker:poll
 ```
 
-Worker จะ poll Scalefusion ทุก 3 นาที (ปรับได้ด้วย `POLL_INTERVAL_MS`)
+เลือกโหมดใน `.env`:
+
+**1) ทุกช่วงเวลา (ค่าเริ่มต้น)** — ทุก 3 นาที
+
+```env
+POLL_INTERVAL_MS=180000
+```
+
+**2) ตามนาฬิกาที่กำหนด** — เช่น วันละ 4 รอบ
+
+```env
+POLL_SCHEDULE=08:00,12:00,17:00,21:00
+POLL_TZ=Asia/Bangkok
+```
+
+ถ้ามี `POLL_SCHEDULE` จะใช้โหมดตามเวลานี้แทน interval  
+ค่าเริ่มต้นจะ poll รอบหนึ่งตอนสตาร์ทด้วย (ปิดได้ด้วย `POLL_ON_STARTUP=0`)
 
 ### Backfill ประวัติย้อนหลัง (~30 วัน)
 
@@ -53,13 +69,14 @@ Scalefusion เก็บประวัติประมาณ **30 วัน**
 # ดึงย้อนหลัง 30 วันทุกอุปกรณ์ที่เปิดติดตาม (แนะนำรันครั้งแรก)
 npm run worker:backfill
 
-# กำหนดจำนวนวัน / บังคับดึงซ้ำวันที่มีข้อมูลแล้ว
-npm run worker:backfill -- --days=30
+# กำหนดจำนวนวัน / concurrency / บังคับดึงซ้ำวันที่มีข้อมูลแล้ว
+npm run worker:backfill -- --days=30 --concurrency=6
 npm run worker:backfill -- --days=7 --force
 ```
 
-ประมาณการ: 73 อุปกรณ์ × 30 วัน ≈ 2,190 API calls (~1.5–2 ชม. ที่ 20 req/min)  
-วันที่มีข้อมูลใน DB แล้วจะถูกข้ามอัตโนมัติ (ยกเว้น `--force`)
+ประมาณการ: ยิงแบบ aggressive จนเจอ 429 แล้วพักตาม Retry-After — มักเร็วกว่าจำกัด 28/min แบบเดิม  
+วันที่มีข้อมูลใน DB แล้วจะถูกข้ามอัตโนมัติ (ยกเว้น `--force`)  
+Concurrency เริ่มต้น 8 — poll ปกติยังใช้โหมด polite แยกต่างหาก
 
 ใน Admin → อุปกรณ์ มีปุ่ม **Backfill 1 วัน** สำหรับดึงสั้นๆ จาก UI
 
@@ -92,7 +109,12 @@ npm run worker:poll
 | `SCALEFUSION_BASE_URL` | Default: https://api.scalefusion.com |
 | `AUTH_SECRET` | NextAuth secret (min 32 chars) |
 | `NEXTAUTH_URL` | App URL |
-| `POLL_INTERVAL_MS` | Worker poll interval (default 180000) |
+| `POLL_INTERVAL_MS` | Interval poll (default 180000 = 3 นาที). ถูกข้ามถ้ามี POLL_SCHEDULE |
+| `POLL_SCHEDULE` | เวลาที่กำหนด เช่น `08:00,12:00,17:00` (ถ้าตั้งค่าจะใช้โหมดนี้) |
+| `POLL_TZ` | Timezone ของ schedule (default Asia/Bangkok) |
+| `POLL_ON_STARTUP` | `0` = ไม่ poll ตอนสตาร์ทในโหมด schedule |
+| `SCALEFUSION_MIN_GAP_MS` | Min gap between API calls (default ~2100) |
+| `BACKFILL_CONCURRENCY` | Parallel backfill fetches (default 8) |
 | `SEED_ADMIN_EMAIL` | Admin email for seed |
 | `SEED_ADMIN_PASSWORD` | Admin password for seed |
 
@@ -104,8 +126,9 @@ SPGPS stays under the limit by:
 
 1. Polling **one bulk endpoint** `location_geofence.json` (not 73 per-device calls)
 2. Default poll every **3 minutes** (~20 calls/hour)
-3. Client-side limiter: max **20 RPM**, min **3s** between requests
+3. Client-side limiter: max **28 RPM** (under official 30), min ~**2.1s** between requests
 4. Skip overlapping poll cycles; handle 429 with Retry-After backoff
+5. Backfill ใช้โหมด **aggressive**: ยิงจนเจอ 429 แล้วพักตาม Retry-After
 
 Env knobs: `SCALEFUSION_MAX_RPM`, `SCALEFUSION_MIN_GAP_MS`, `POLL_INTERVAL_MS`
 

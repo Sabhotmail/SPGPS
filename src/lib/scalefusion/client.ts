@@ -4,12 +4,15 @@ import {
   ScalefusionListResponse,
   ScalefusionLocation,
 } from "./types";
-
-export type { ScalefusionLocation };import {
+import {
   acquireScalefusionSlot,
+  getRateLimitMode,
   getRateLimitStats,
+  notifyRateLimited,
   parseRetryAfterMs,
 } from "./rate-limiter";
+
+export type { ScalefusionLocation };
 
 export class ScalefusionRateLimitError extends Error {
   constructor(
@@ -20,7 +23,6 @@ export class ScalefusionRateLimitError extends Error {
     this.name = "ScalefusionRateLimitError";
   }
 }
-
 /** Thrown when ?date= is older than Scalefusion retention (~30 days). */
 export class ScalefusionDateOutOfRangeError extends Error {
   constructor(
@@ -53,11 +55,13 @@ function getApiKey(): string {
 
 async function scalefusionFetch<T>(
   path: string,
-  retries = 3
+  retries = 8
 ): Promise<T> {
   let lastError: Error | null = null;
+  const maxAttempts =
+    getRateLimitMode() === "aggressive" ? Math.max(retries, 12) : 3;
 
-  for (let attempt = 0; attempt < retries; attempt++) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       await acquireScalefusionSlot();
 
@@ -73,27 +77,19 @@ async function scalefusionFetch<T>(
       if (response.status === 429) {
         const retryAfterMs =
           parseRetryAfterMs(response) ??
-          Math.min(60_000, 5_000 * Math.pow(2, attempt));
-        console.warn(
-          `[scalefusion] HTTP 429 on ${path}; backing off ${retryAfterMs}ms`
-        );
+          Math.min(60_000, 5_000 * Math.pow(2, Math.min(attempt, 4)));
+        notifyRateLimited(retryAfterMs);
         lastError = new ScalefusionRateLimitError(
           `Scalefusion rate limited (429)`,
           retryAfterMs
         );
-        if (attempt < retries - 1) {
-          await new Promise((r) => setTimeout(r, retryAfterMs));
-          continue;
-        }
-        throw lastError;
+        // acquireScalefusionSlot() on next loop will wait until pause clears
+        continue;
       }
 
       if (!response.ok) {
         const text = await response.text();
-        if (
-          response.status === 422 &&
-          /greater than/i.test(text)
-        ) {
+        if (response.status === 422 && /greater than/i.test(text)) {
           throw new ScalefusionDateOutOfRangeError(
             `Scalefusion API error 422: ${text.slice(0, 200)}`,
             parseMinDateFrom422(text)
@@ -111,11 +107,10 @@ async function scalefusionFetch<T>(
       }
       if (error instanceof ScalefusionRateLimitError) {
         lastError = error;
-        if (attempt >= retries - 1) throw error;
         continue;
       }
       lastError = error instanceof Error ? error : new Error(String(error));
-      if (attempt < retries - 1) {
+      if (attempt < maxAttempts - 1) {
         await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 1000));
       }
     }

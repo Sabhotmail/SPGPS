@@ -29,6 +29,7 @@ export default function AdminDevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [syncing, setSyncing] = useState(false);
+  const [pullingId, setPullingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
   async function load() {
@@ -117,6 +118,27 @@ export default function AdminDevicesPage() {
     }
   }
 
+  async function pullDevice(device: Device) {
+    setPullingId(device.id);
+    setMessage("");
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "device-poll", deviceId: device.id }),
+    });
+    setPullingId(null);
+    if (res.ok) {
+      const data = await res.json();
+      setMessage(
+        `ดึง ${data.deviceName}: +${data.recordsAdded} จุดใหม่ (API ${data.apiCount} จุด · ${data.date})`
+      );
+      load();
+    } else {
+      const data = await res.json();
+      setMessage(data.error ?? "ดึงพิกัดล้มเหลว");
+    }
+  }
+
   async function updateDevice(
     id: string,
     data: { employeeName?: string; isActive?: boolean }
@@ -130,17 +152,18 @@ export default function AdminDevicesPage() {
   }
 
   const activeCount = devices.filter((d) => d.isActive).length;
+  const busy = syncing || pullingId != null;
 
   return (
     <div className="animate-fade-up">
       <PageHeader
         title="อุปกรณ์"
-        description="Sync จาก Scalefusion ตั้งชื่อพนักงาน และดึงประวัติย้อนหลังเก็บในฐานข้อมูล"
+        description="Sync จาก Scalefusion ตั้งชื่อพนักงาน และดึงพิกัดแยกตามอุปกรณ์ได้"
         actions={
           <>
             <Button
               onClick={syncDevices}
-              disabled={syncing}
+              disabled={busy}
               className="h-8 text-[13px]"
             >
               Sync Scalefusion
@@ -148,15 +171,15 @@ export default function AdminDevicesPage() {
             <Button
               variant="outline"
               onClick={pollNow}
-              disabled={syncing}
+              disabled={busy}
               className="h-8 text-[13px]"
             >
-              Poll now
+              Poll ทั้งหมด
             </Button>
             <Button
               variant="outline"
               onClick={backfillRecent}
-              disabled={syncing}
+              disabled={busy}
               className="h-8 text-[13px]"
             >
               Backfill 1 วัน
@@ -184,6 +207,7 @@ export default function AdminDevicesPage() {
               <th>Last seen</th>
               <th>กลุ่ม</th>
               <th>ติดตาม</th>
+              <th>พิกัด</th>
             </tr>
           </thead>
           <tbody>
@@ -213,11 +237,28 @@ export default function AdminDevicesPage() {
                     variant={d.isActive ? "secondary" : "outline"}
                     size="sm"
                     className="h-7 text-[12px]"
+                    disabled={busy}
                     onClick={() =>
                       updateDevice(d.id, { isActive: !d.isActive })
                     }
                   >
                     {d.isActive ? "เปิด" : "ปิด"}
+                  </Button>
+                </td>
+                <td>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-[12px]"
+                    disabled={busy || !d.isActive}
+                    onClick={() => pullDevice(d)}
+                    title={
+                      d.isActive
+                        ? "ดึงพิกัดวันนี้ของอุปกรณ์นี้จาก Scalefusion"
+                        : "เปิดการติดตามก่อน"
+                    }
+                  >
+                    {pullingId === d.id ? "กำลังดึง..." : "ดึงพิกัด"}
                   </Button>
                 </td>
               </tr>

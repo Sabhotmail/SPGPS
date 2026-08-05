@@ -9,6 +9,7 @@ import {
   parseRecordedAt,
   type ScalefusionLocation,
 } from "./client";
+import { setRateLimitMode } from "./rate-limiter";
 
 function formatDateUTC(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -72,6 +73,66 @@ async function insertLocations(
   return added;
 }
 
+/**
+ * Pull one device's locations for a given day (default: today UTC).
+ * Uses /locations.json?date= — 1 API call.
+ */
+export async function fetchLocationsForDevice(options: {
+  deviceId: string;
+  date?: string;
+}): Promise<{
+  recordsAdded: number;
+  apiCount: number;
+  date: string;
+  lastSeenAt: string | null;
+  deviceName: string;
+}> {
+  const device = await prisma.device.findUnique({
+    where: { id: options.deviceId },
+  });
+  if (!device) {
+    throw new Error("Device not found");
+  }
+
+  const date = options.date ?? formatDateUTC(new Date());
+  const sfId = Number(device.scalefusionDeviceId);
+  const fetchedAt = new Date();
+
+  const locations = await fetchDeviceLocations(sfId, date);
+  const recordsAdded = await insertLocations(device.id, locations, fetchedAt);
+
+  let lastSeenAt: Date | null = device.lastSeenAt;
+  if (locations.length > 0) {
+    const latest = locations.reduce((a, b) => {
+      const ta = parseRecordedAt(a).getTime();
+      const tb = parseRecordedAt(b).getTime();
+      return tb >= ta ? b : a;
+    });
+    lastSeenAt = parseRecordedAt(latest);
+    await prisma.device.update({
+      where: { id: device.id },
+      data: { lastSeenAt },
+    });
+  }
+
+  await prisma.syncLog.create({
+    data: {
+      syncType: SyncType.LOCATION_POLL,
+      status: SyncStatus.SUCCESS,
+      recordsAdded,
+      errorMessage: `device=${device.deviceName}; date=${date}; api=${locations.length}`,
+    },
+  });
+
+  return {
+    recordsAdded,
+    apiCount: locations.length,
+    date,
+    lastSeenAt: lastSeenAt?.toISOString() ?? null,
+    deviceName: device.employeeName ?? device.deviceName,
+  };
+}
+
 export async function syncDevicesFromScalefusion(): Promise<{
   synced: number;
   created: number;
@@ -118,9 +179,17 @@ export async function pollLocationsFromScalefusion(): Promise<{
   devicesUpdated: number;
 }> {
   const sfDevices = await fetchLocationGeofence();
-  let recordsAdded = 0;
-  let devicesUpdated = 0;
   const fetchedAt = new Date();
+
+  const rows: {
+    deviceId: string;
+    latitude: Prisma.Decimal;
+    longitude: Prisma.Decimal;
+    accuracy: Prisma.Decimal | null;
+    recordedAt: Date;
+    fetchedAt: Date;
+  }[] = [];
+  const lastSeenByDevice = new Map<string, Date>();
 
   for (const sf of sfDevices) {
     const location = extractLocation(sf);
@@ -133,41 +202,34 @@ export async function pollLocationsFromScalefusion(): Promise<{
     if (!device || !device.isActive) continue;
 
     const recordedAt = parseRecordedAt(location);
-    const latitude = new Prisma.Decimal(location.latitude);
-    const longitude = new Prisma.Decimal(location.longitude);
-    const accuracy =
-      location.accuracy != null
-        ? new Prisma.Decimal(location.accuracy)
-        : null;
+    rows.push({
+      deviceId: device.id,
+      latitude: new Prisma.Decimal(location.latitude),
+      longitude: new Prisma.Decimal(location.longitude),
+      accuracy:
+        location.accuracy != null
+          ? new Prisma.Decimal(location.accuracy)
+          : null,
+      recordedAt,
+      fetchedAt,
+    });
+    lastSeenByDevice.set(device.id, recordedAt);
+  }
 
-    try {
-      await prisma.locationRecord.create({
-        data: {
-          deviceId: device.id,
-          latitude,
-          longitude,
-          accuracy,
-          recordedAt,
-          fetchedAt,
-        },
-      });
-      recordsAdded++;
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002"
-      ) {
-        // duplicate — skip
-      } else {
-        throw error;
-      }
-    }
+  let recordsAdded = 0;
+  if (rows.length > 0) {
+    const result = await prisma.locationRecord.createMany({
+      data: rows,
+      skipDuplicates: true,
+    });
+    recordsAdded = result.count;
+  }
 
+  for (const [deviceId, recordedAt] of lastSeenByDevice) {
     await prisma.device.update({
-      where: { id: device.id },
+      where: { id: deviceId },
       data: { lastSeenAt: recordedAt },
     });
-    devicesUpdated++;
   }
 
   await prisma.syncLog.create({
@@ -178,7 +240,7 @@ export async function pollLocationsFromScalefusion(): Promise<{
     },
   });
 
-  return { recordsAdded, devicesUpdated };
+  return { recordsAdded, devicesUpdated: lastSeenByDevice.size };
 }
 
 export type BackfillOptions = {
@@ -188,8 +250,38 @@ export type BackfillOptions = {
   deviceId?: string;
   /** Skip device+day if DB already has any points that day (default true) */
   skipExistingDays?: boolean;
+  /** Parallel API fetches. Default 8 in aggressive mode. */
+  concurrency?: number;
   onProgress?: (message: string) => void;
 };
+
+type BackfillJob = {
+  deviceId: string;
+  sfId: number;
+  label: string;
+  date: string;
+};
+
+async function loadExistingDayKeys(
+  deviceIds: string[],
+  fromDate: string,
+  toDate: string
+): Promise<Set<string>> {
+  if (deviceIds.length === 0) return new Set();
+
+  const rows = await prisma.$queryRaw<{ device_id: string; date: string }[]>`
+    SELECT
+      device_id,
+      to_char(recorded_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date
+    FROM location_records
+    WHERE device_id IN (${Prisma.join(deviceIds)})
+      AND recorded_at >= ${startOfUtcDay(fromDate)}
+      AND recorded_at <= ${endOfUtcDay(toDate)}
+    GROUP BY device_id, 2
+  `;
+
+  return new Set(rows.map((r) => `${r.device_id}:${r.date}`));
+}
 
 /**
  * Pull Scalefusion per-device /locations.json?date= into PostgreSQL.
@@ -207,17 +299,51 @@ export async function backfillLocationsFromScalefusion(
 }> {
   const days = options.days ?? 30;
   const skipExisting = options.skipExistingDays ?? true;
+  const concurrency = Math.max(
+    1,
+    Math.min(12, Math.floor(options.concurrency ?? 8))
+  );
   const log = options.onProgress ?? ((m: string) => console.log(m));
+
+  setRateLimitMode("aggressive");
+  try {
+    return await runBackfillJobs({
+      days,
+      skipExisting,
+      concurrency,
+      deviceId: options.deviceId,
+      log,
+    });
+  } finally {
+    setRateLimitMode("polite");
+  }
+}
+
+async function runBackfillJobs(args: {
+  days: number;
+  skipExisting: boolean;
+  concurrency: number;
+  deviceId?: string;
+  log: (message: string) => void;
+}): Promise<{
+  recordsAdded: number;
+  requestsMade: number;
+  devicesProcessed: number;
+  daysProcessed: number;
+  skippedDays: number;
+  cutoffDate: string | null;
+}> {
+  const { days, skipExisting, concurrency, log } = args;
 
   const devices = await prisma.device.findMany({
     where: {
       isActive: true,
-      ...(options.deviceId ? { id: options.deviceId } : {}),
+      ...(args.deviceId ? { id: args.deviceId } : {}),
     },
     orderBy: { deviceName: "asc" },
   });
 
-  let dates = buildBackfillDates(days);
+  const dates = buildBackfillDates(days);
   let cutoffDate: string | null = null;
   let recordsAdded = 0;
   let requestsMade = 0;
@@ -225,67 +351,80 @@ export async function backfillLocationsFromScalefusion(
   let daysProcessed = 0;
   const fetchedAt = new Date();
 
-  log(
-    `[backfill] ${devices.length} device(s) × ${dates.length} day(s) (skipExisting=${skipExisting})`
-  );
+  const existingKeys = skipExisting
+    ? await loadExistingDayKeys(
+        devices.map((d) => d.id),
+        dates[0]!,
+        dates[dates.length - 1]!
+      )
+    : new Set<string>();
 
+  const jobs: BackfillJob[] = [];
   for (const device of devices) {
     const sfId = Number(device.scalefusionDeviceId);
     const label = device.employeeName ?? device.deviceName;
-
     for (const date of dates) {
-      if (cutoffDate && date < cutoffDate) {
+      if (existingKeys.has(`${device.id}:${date}`)) {
+        skippedDays++;
+        continue;
+      }
+      jobs.push({ deviceId: device.id, sfId, label, date });
+    }
+  }
+
+  log(
+    `[backfill] ${devices.length} device(s) × ${dates.length} day(s) → ${jobs.length} jobs (concurrency=${concurrency}, mode=aggressive/fire-until-429)`
+  );
+
+  let cursor = 0;
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const index = cursor++;
+      if (index >= jobs.length) return;
+      const job = jobs[index]!;
+
+      if (cutoffDate && job.date < cutoffDate) {
         skippedDays++;
         continue;
       }
 
-      if (skipExisting) {
-        const existing = await prisma.locationRecord.count({
-          where: {
-            deviceId: device.id,
-            recordedAt: {
-              gte: startOfUtcDay(date),
-              lte: endOfUtcDay(date),
-            },
-          },
-        });
-        if (existing > 0) {
-          skippedDays++;
-          continue;
-        }
-      }
-
       try {
-        const locations = await fetchDeviceLocations(sfId, date);
+        const locations = await fetchDeviceLocations(job.sfId, job.date);
         requestsMade++;
-        const added = await insertLocations(device.id, locations, fetchedAt);
+        const added = await insertLocations(
+          job.deviceId,
+          locations,
+          fetchedAt
+        );
         recordsAdded += added;
         daysProcessed++;
 
         if (added > 0 || locations.length > 0) {
           log(
-            `[backfill] ${label} ${date}: +${added} (api ${locations.length})`
+            `[backfill] ${job.label} ${job.date}: +${added} (api ${locations.length})`
           );
         }
       } catch (error) {
         if (error instanceof ScalefusionDateOutOfRangeError) {
           requestsMade++;
           const min = error.minDate;
-          // API requires date > minDate — usable from the next UTC day
+          let nextCutoff: string;
           if (min) {
             const next = new Date(min);
             next.setUTCDate(next.getUTCDate() + 1);
-            cutoffDate = formatDateUTC(next);
+            nextCutoff = formatDateUTC(next);
           } else {
-            // current date is out of range; keep going only newer
-            const next = new Date(`${date}T12:00:00.000Z`);
+            const next = new Date(`${job.date}T12:00:00.000Z`);
             next.setUTCDate(next.getUTCDate() + 1);
-            cutoffDate = formatDateUTC(next);
+            nextCutoff = formatDateUTC(next);
           }
-          dates = dates.filter((d) => !cutoffDate || d >= cutoffDate);
-          log(
-            `[backfill] Scalefusion retention cutoff — only dates >= ${cutoffDate}`
-          );
+          if (!cutoffDate || nextCutoff > cutoffDate) {
+            cutoffDate = nextCutoff;
+            log(
+              `[backfill] Scalefusion retention cutoff — only dates >= ${cutoffDate}`
+            );
+          }
           skippedDays++;
           continue;
         }
@@ -294,14 +433,21 @@ export async function backfillLocationsFromScalefusion(
     }
   }
 
+  await Promise.all(
+    Array.from(
+      { length: Math.min(concurrency, Math.max(1, jobs.length)) },
+      () => worker()
+    )
+  );
+
   await prisma.syncLog.create({
     data: {
       syncType: SyncType.HISTORY_BACKFILL,
       status: SyncStatus.SUCCESS,
       recordsAdded,
       errorMessage: cutoffDate
-        ? `cutoff>=${cutoffDate}; req=${requestsMade}; skip=${skippedDays}`
-        : `req=${requestsMade}; skip=${skippedDays}`,
+        ? `cutoff>=${cutoffDate}; req=${requestsMade}; skip=${skippedDays}; conc=${concurrency}; mode=aggressive`
+        : `req=${requestsMade}; skip=${skippedDays}; conc=${concurrency}; mode=aggressive`,
     },
   });
 

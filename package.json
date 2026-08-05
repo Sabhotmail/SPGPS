@@ -11,8 +11,8 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "worker:poll": "tsx worker/poll-locations.ts",
-    "worker:sync": "tsx worker/sync-devices.ts",
+    "worker:poll": "tsx --env-file=.env worker/poll-locations.ts",
+    "worker:sync": "tsx --env-file=.env worker/sync-devices.ts",
     "worker:backfill": "tsx --env-file=.env worker/backfill-locations.ts"
   },
   "prisma": {
