@@ -126,6 +126,50 @@ http://100.106.34.125:3000
 npm run worker:poll
 ```
 
+### Windows — NSSM (Production)
+
+เตรียมครั้งแรกบน server:
+
+```powershell
+cd C:\NextJSTest\SPGPS
+git pull
+npm ci
+npx prisma generate
+npx prisma migrate deploy
+npm run build
+```
+
+แก้ path/port ใน `scripts/nssm-install.ps1` (ค่าเริ่มต้น `C:\NextJSTest\SPGPS`, พอร์ต `3003`) แล้วรัน **PowerShell as Administrator**:
+
+```powershell
+cd C:\NextJSTest\SPGPS
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\nssm-install.ps1
+```
+
+ลบ service เก่าก่อนติดตั้งใหม่:
+
+```powershell
+.\scripts\nssm-remove.ps1
+```
+
+คำสั่งที่ใช้บ่อย:
+
+```cmd
+nssm status "SPGPS Web"
+nssm restart "SPGPS Web"
+nssm restart "SPGPS Worker"
+type C:\NextJSTest\SPGPS\logs\web.err.log
+```
+
+Firewall (ตัวอย่างพอร์ต 3003):
+
+```cmd
+netsh advfirewall firewall add rule name="SPGPS Web 3003" dir=in action=allow protocol=TCP localport=3003
+```
+
+**สำคัญ:** ชื่อ service มีช่องว่าง — ใส่ quote เสมอ (`"SPGPS Web"`). รัน `nssm` ทีละคำสั่ง อย่าต่อเป็นบรรทัดเดียว. ถ้า error `marked for deletion` ให้ปิด `services.msc` รอ 30 วินาที หรือ reboot แล้วรัน `nssm-install.ps1` อีกครั้ง.
+
 ## Environment Variables
 
 | Variable | Description |
