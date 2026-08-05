@@ -68,7 +68,17 @@ export async function POST(request: NextRequest) {
       },
     },
     include: {
-      devices: { include: { device: true } },
+      devices: {
+        include: {
+          device: {
+            select: {
+              id: true,
+              deviceName: true,
+              employeeName: true,
+            },
+          },
+        },
+      },
     },
   });
 

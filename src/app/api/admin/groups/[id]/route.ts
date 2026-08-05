@@ -44,7 +44,17 @@ export async function PATCH(
       ...(description !== undefined && { description }),
     },
     include: {
-      devices: { include: { device: true } },
+      devices: {
+        include: {
+          device: {
+            select: {
+              id: true,
+              deviceName: true,
+              employeeName: true,
+            },
+          },
+        },
+      },
     },
   });
 

@@ -97,9 +97,9 @@ npm run build
 npm start
 ```
 
-`dev` / `start` bind ที่ `0.0.0.0:3000` เพื่อให้เข้าจากเครื่องอื่นในเครือข่ายได้ (รวม Tailscale)
+`dev` / `start` bind ที่ `0.0.0.0` และใช้พอร์ตจาก `PORT` ใน `.env` (ค่าเริ่มต้น **3000**) เพื่อให้เข้าจากเครื่องอื่นในเครือข่ายได้ (รวม Tailscale)
 
-อย่าเปิด URL ที่ Next แสดงเป็น `http://0.0.0.0:3000` ในเบราว์เซอร์ — ใช้ `http://localhost:3000` หรือ Tailscale IP แทน
+อย่าเปิด URL ที่ Next แสดงเป็น `http://0.0.0.0:<port>` ในเบราว์เซอร์ — ใช้ `http://localhost:<port>` หรือ Tailscale IP แทน
 
 ### เข้าผ่าน Tailscale
 
@@ -111,10 +111,12 @@ npm start
 http://100.106.34.125:3000
 ```
 
+(เปลี่ยน `3000` ตาม `PORT` ใน `.env` ถ้าตั้งค่าอื่น เช่น `8080`)
+
 หรือชื่อเครื่อง Tailscale เช่น `http://it-thanuphat-nb:3000` (ถ้า MagicDNS เปิดอยู่)
 
 มี `AUTH_TRUST_HOST=true` และ**อย่าตั้ง** `AUTH_URL`/`NEXTAUTH_URL` เป็น localhost — ไม่เช่นนั้น login จะเด้งกลับ localhost  
-ถ้า Windows Firewall ถาม ให้ Allow port **3000** สำหรับ Node
+ถ้า Windows Firewall ถาม ให้ Allow พอร์ตที่ตั้งใน `PORT` สำหรับ Node
 
 รัน worker แยก (PM2, Windows Service, หรือ systemd):
 
@@ -131,6 +133,7 @@ npm run worker:poll
 | `SCALEFUSION_BASE_URL` | Default: https://api.scalefusion.com |
 | `AUTH_SECRET` | NextAuth secret (min 32 chars) |
 | `AUTH_TRUST_HOST` | `true` — จำเป็นสำหรับ `next start` / Tailscale |
+| `PORT` | พอร์ตเว็บ (ค่าเริ่มต้น `3000`) — ตั้งใน `.env` แล้ว restart service |
 | `AUTH_URL` / `NEXTAUTH_URL` | **ไม่ต้องตั้ง** (เว้นว่าง) — ถ้าตั้งเป็น `localhost` จะ redirect ไป localhost ตลอดตอนเข้าผ่าน Tailscale |
 | `SMTP_HOST` | SMTP server (ค่าเริ่มต้นใช้งานกับ O365: `smtp.office365.com`) |
 | `SMTP_PORT` | พอร์ต SMTP (ค่าเริ่มต้น `587`) |

@@ -61,8 +61,10 @@ export default function AdminGroupsPage() {
       setMessage("สร้างกลุ่มแล้ว");
       load();
     } else {
-      const data = await res.json();
-      setMessage(typeof data.error === "string" ? data.error : "เกิดข้อผิดพลาด");
+      const data = await res.json().catch(() => ({}));
+      setMessage(
+        typeof data.error === "string" ? data.error : "เกิดข้อผิดพลาด"
+      );
     }
   }
 
@@ -166,55 +168,92 @@ export default function AdminGroupsPage() {
         <p className="text-[13px] text-muted-foreground">ยังไม่มีกลุ่ม</p>
       ) : (
         <div className="divide-y border-t">
-          {groups.map((g) => (
-            <section key={g.id} className="py-6">
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-[15px] font-semibold">{g.name}</h3>
-                  {g.description && (
-                    <p className="mt-1 text-[13px] text-muted-foreground">
-                      {g.description}
+          {groups.map((g) => {
+            const inGroupIds = new Set(g.devices.map((d) => d.id));
+            const available = allDevices.filter((d) => !inGroupIds.has(d.id));
+
+            return (
+              <section key={g.id} className="py-6">
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-[15px] font-semibold">{g.name}</h3>
+                    {g.description && (
+                      <p className="mt-1 text-[13px] text-muted-foreground">
+                        {g.description}
+                      </p>
+                    )}
+                    <p className="mt-1 text-[12px] text-muted-foreground">
+                      {g.devices.length} อุปกรณ์
                     </p>
-                  )}
-                  <p className="mt-1 text-[12px] text-muted-foreground">
-                    {g.devices.length} อุปกรณ์
-                  </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-[12px] text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(g.id)}
+                  >
+                    ลบ
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-[12px] text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(g.id)}
-                >
-                  ลบ
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {allDevices.map((d) => {
-                  const active = g.devices.some((x) => x.id === d.id);
-                  return (
-                    <Button
-                      key={d.id}
-                      type="button"
-                      size="sm"
-                      variant={active ? "default" : "outline"}
-                      className="h-7 text-[12px]"
-                      onClick={() => {
-                        const next = active
-                          ? g.devices
+
+                {g.devices.length === 0 ? (
+                  <p className="text-[13px] text-muted-foreground">
+                    ยังไม่มีอุปกรณ์ในกลุ่ม
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {g.devices.map((d) => (
+                      <Button
+                        key={d.id}
+                        type="button"
+                        size="sm"
+                        variant="default"
+                        className="h-7 text-[12px]"
+                        title="คลิกเพื่อนำออกจากกลุ่ม"
+                        onClick={() => {
+                          updateGroupDevices(
+                            g.id,
+                            g.devices
                               .filter((x) => x.id !== d.id)
                               .map((x) => x.id)
-                          : [...g.devices.map((x) => x.id), d.id];
-                        updateGroupDevices(g.id, next);
-                      }}
-                    >
-                      {d.employeeName ?? d.deviceName}
-                    </Button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+                          );
+                        }}
+                      >
+                        {d.employeeName ?? d.deviceName}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
+                {available.length > 0 && (
+                  <details className="mt-4">
+                    <summary className="cursor-pointer text-[13px] text-muted-foreground hover:text-foreground">
+                      เพิ่มอุปกรณ์ ({available.length})
+                    </summary>
+                    <div className="mt-2 flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
+                      {available.map((d) => (
+                        <Button
+                          key={d.id}
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[12px]"
+                          onClick={() => {
+                            updateGroupDevices(g.id, [
+                              ...g.devices.map((x) => x.id),
+                              d.id,
+                            ]);
+                          }}
+                        >
+                          {d.employeeName ?? d.deviceName}
+                        </Button>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
     </div>
