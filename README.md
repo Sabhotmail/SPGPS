@@ -97,6 +97,8 @@ npm run build
 npm start
 ```
 
+`next start` (ไม่ใช้ `output: standalone`) — เหมาะกับ NSSM บน Windows: เรียก `node.exe` + `node_modules\next\dist\bin\next start -H 0.0.0.0 -p <PORT>`
+
 `dev` / `start` bind ที่ `0.0.0.0` และใช้พอร์ตจาก `PORT` ใน `.env` (ค่าเริ่มต้น **3000**) เพื่อให้เข้าจากเครื่องอื่นในเครือข่ายได้ (รวม Tailscale)
 
 อย่าเปิด URL ที่ Next แสดงเป็น `http://0.0.0.0:<port>` ในเบราว์เซอร์ — ใช้ `http://localhost:<port>` หรือ Tailscale IP แทน
