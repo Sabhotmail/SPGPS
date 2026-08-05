@@ -3,12 +3,14 @@ import { prisma } from "../db";
 import {
   ScalefusionDateOutOfRangeError,
   extractLocation,
+  fetchDeviceDetails,
   fetchDeviceLocations,
   fetchDevices,
   fetchLocationGeofence,
   parseRecordedAt,
   type ScalefusionLocation,
 } from "./client";
+import type { ScalefusionDeviceDetails } from "./types";
 import { setRateLimitMode } from "./rate-limiter";
 
 function formatDateUTC(d: Date): string {
@@ -133,10 +135,19 @@ export async function fetchLocationsForDevice(options: {
   };
 }
 
-export async function syncDevicesFromScalefusion(): Promise<{
+export async function syncDevicesFromScalefusion(options?: {
+  /** Fetch GET /api/v3/devices/{id} for each known device (default true). */
+  enrichDetails?: boolean;
+  /** Parallel v3 detail fetches. Default 6. */
+  detailsConcurrency?: number;
+  onProgress?: (message: string) => void;
+}): Promise<{
   synced: number;
   created: number;
+  detailsUpdated: number;
 }> {
+  const enrichDetails = options?.enrichDetails !== false;
+  const log = options?.onProgress ?? ((m: string) => console.log(m));
   let created = 0;
   const sfDevices = await fetchDevices();
 
@@ -163,15 +174,137 @@ export async function syncDevicesFromScalefusion(): Promise<{
     }
   }
 
+  let detailsUpdated = 0;
+  if (enrichDetails && sfDevices.length > 0) {
+    detailsUpdated = await enrichDeviceDetailsFromScalefusion({
+      concurrency: options?.detailsConcurrency,
+      onProgress: log,
+    });
+  }
+
   await prisma.syncLog.create({
     data: {
       syncType: SyncType.DEVICE_SYNC,
       status: SyncStatus.SUCCESS,
       recordsAdded: created,
+      errorMessage: enrichDetails
+        ? `detailsUpdated=${detailsUpdated}`
+        : null,
     },
   });
 
-  return { synced: sfDevices.length, created };
+  return { synced: sfDevices.length, created, detailsUpdated };
+}
+
+function detailsToPrismaData(
+  details: ScalefusionDeviceDetails
+): Prisma.DeviceUpdateInput {
+  let licenseExpiresAt: Date | null = null;
+  if (details.license?.expire_date) {
+    const parsed = new Date(`${details.license.expire_date}T00:00:00.000Z`);
+    if (!Number.isNaN(parsed.getTime())) licenseExpiresAt = parsed;
+  } else if (
+    details.licence_expires_at != null &&
+    Number.isFinite(details.licence_expires_at)
+  ) {
+    // Unix seconds
+    const ms =
+      details.licence_expires_at > 1e12
+        ? details.licence_expires_at
+        : details.licence_expires_at * 1000;
+    licenseExpiresAt = new Date(ms);
+  }
+
+  const batteryPercent =
+    details.battery_status != null && Number.isFinite(details.battery_status)
+      ? Math.round(details.battery_status)
+      : null;
+
+  return {
+    make: details.make ?? null,
+    model: details.model ?? null,
+    osVersion: details.os_version ?? null,
+    connectionStatus: details.connection_status ?? null,
+    batteryPercent,
+    batteryCharging: details.battery_charging ?? null,
+    batteryHealth: details.battery_health ?? null,
+    phoneNo: details.phone_no?.trim() ? details.phone_no.trim() : null,
+    simNetwork: details.sim_network?.trim() ? details.sim_network.trim() : null,
+    sfGroupName: details.device_group?.name ?? null,
+    licenseActive: details.licence_active ?? null,
+    licenseExpiresAt,
+    detailsFetchedAt: new Date(),
+    ...(details.name
+      ? { deviceName: details.name }
+      : {}),
+  };
+}
+
+/**
+ * Enrich DB devices from Scalefusion v3 details endpoint.
+ * Safe fields only (no exit_password / license code / IMEI).
+ */
+export async function enrichDeviceDetailsFromScalefusion(options?: {
+  deviceId?: string;
+  concurrency?: number;
+  onProgress?: (message: string) => void;
+}): Promise<number> {
+  const log = options?.onProgress ?? ((m: string) => console.log(m));
+  const concurrency = Math.max(
+    1,
+    Math.min(8, Math.floor(options?.concurrency ?? 6))
+  );
+
+  const devices = await prisma.device.findMany({
+    where: options?.deviceId ? { id: options.deviceId } : undefined,
+    select: { id: true, scalefusionDeviceId: true, deviceName: true },
+    orderBy: { deviceName: "asc" },
+  });
+
+  if (devices.length === 0) return 0;
+
+  log(
+    `[details] enriching ${devices.length} device(s) via /api/v3/devices/{id}.json (concurrency=${concurrency})`
+  );
+
+  setRateLimitMode("aggressive");
+  let updated = 0;
+  let cursor = 0;
+
+  try {
+    async function worker(): Promise<void> {
+      while (cursor < devices.length) {
+        const index = cursor++;
+        const device = devices[index]!;
+        const sfId = Number(device.scalefusionDeviceId);
+        try {
+          const details = await fetchDeviceDetails(sfId);
+          await prisma.device.update({
+            where: { id: device.id },
+            data: detailsToPrismaData(details),
+          });
+          updated++;
+          if (updated % 10 === 0 || updated === devices.length) {
+            log(`[details] ${updated}/${devices.length} updated`);
+          }
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          log(`[details] fail ${device.deviceName} (${sfId}): ${message}`);
+        }
+      }
+    }
+
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, devices.length) }, () =>
+        worker()
+      )
+    );
+  } finally {
+    setRateLimitMode("polite");
+  }
+
+  return updated;
 }
 
 export async function pollLocationsFromScalefusion(): Promise<{

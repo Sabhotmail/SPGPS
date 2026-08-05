@@ -1,5 +1,6 @@
 import {
   ScalefusionDevice,
+  ScalefusionDeviceDetails,
   ScalefusionGeofenceDevice,
   ScalefusionListResponse,
   ScalefusionLocation,
@@ -209,6 +210,77 @@ export async function fetchDevices(): Promise<ScalefusionDevice[]> {
   const path = process.env.SCALEFUSION_DEVICES_PATH ?? "/api/v1/devices.json";
   const data = await scalefusionFetch<unknown>(path);
   return normalizeList(data, normalizeDevice);
+}
+
+/**
+ * Full device metadata — GET /api/v3/devices/{id}.json
+ * ~1 call per device; use during daily sync or on-demand admin refresh.
+ */
+export async function fetchDeviceDetails(
+  deviceId: number
+): Promise<ScalefusionDeviceDetails> {
+  const data = await scalefusionFetch<unknown>(
+    `/api/v3/devices/${deviceId}.json`
+  );
+  const details = normalizeDeviceDetails(data);
+  if (!details) {
+    throw new Error(`Invalid device details response for id=${deviceId}`);
+  }
+  return details;
+}
+
+function normalizeDeviceDetails(raw: unknown): ScalefusionDeviceDetails | null {
+  const item = asRecord(raw);
+  if (!item) return null;
+  const nested = asRecord(item.device) ?? item;
+  const id = nested.id ?? item.id;
+  if (id == null) return null;
+
+  const group = asRecord(nested.device_group);
+  const license = asRecord(nested.license);
+
+  return {
+    id: Number(id),
+    name: (nested.name ?? nested.device_name) as string | undefined,
+    make: nested.make as string | undefined,
+    model: (nested.model ?? nested.model_name) as string | undefined,
+    os_version: nested.os_version as string | undefined,
+    connection_status: nested.connection_status as string | undefined,
+    connection_state: nested.connection_state as string | undefined,
+    battery_status:
+      nested.battery_status != null ? Number(nested.battery_status) : undefined,
+    battery_charging:
+      typeof nested.battery_charging === "boolean"
+        ? nested.battery_charging
+        : typeof nested.charging === "boolean"
+          ? nested.charging
+          : undefined,
+    battery_health: nested.battery_health as string | undefined,
+    phone_no: nested.phone_no as string | undefined,
+    sim_network: nested.sim_network as string | undefined,
+    licence_active:
+      typeof nested.licence_active === "boolean"
+        ? nested.licence_active
+        : undefined,
+    licence_expires_at:
+      nested.licence_expires_at != null
+        ? Number(nested.licence_expires_at)
+        : undefined,
+    last_seen_on: nested.last_seen_on as string | undefined,
+    last_connected_at: nested.last_connected_at as string | undefined,
+    device_group: group
+      ? {
+          id: group.id != null ? Number(group.id) : undefined,
+          name: group.name as string | undefined,
+        }
+      : null,
+    license: license
+      ? {
+          expire_date: license.expire_date as string | undefined,
+          // intentionally omit license.code (secret)
+        }
+      : null,
+  };
 }
 
 /**

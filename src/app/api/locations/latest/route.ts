@@ -3,6 +3,38 @@ import { getAccessibleDeviceIds } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
+function serializeDeviceMeta(d: {
+  make: string | null;
+  model: string | null;
+  osVersion: string | null;
+  connectionStatus: string | null;
+  batteryPercent: number | null;
+  batteryCharging: boolean | null;
+  batteryHealth: string | null;
+  phoneNo: string | null;
+  simNetwork: string | null;
+  sfGroupName: string | null;
+  licenseActive: boolean | null;
+  licenseExpiresAt: Date | null;
+  detailsFetchedAt: Date | null;
+}) {
+  return {
+    make: d.make,
+    model: d.model,
+    osVersion: d.osVersion,
+    connectionStatus: d.connectionStatus,
+    batteryPercent: d.batteryPercent,
+    batteryCharging: d.batteryCharging,
+    batteryHealth: d.batteryHealth,
+    phoneNo: d.phoneNo,
+    simNetwork: d.simNetwork,
+    sfGroupName: d.sfGroupName,
+    licenseActive: d.licenseActive,
+    licenseExpiresAt: d.licenseExpiresAt?.toISOString() ?? null,
+    detailsFetchedAt: d.detailsFetchedAt?.toISOString() ?? null,
+  };
+}
+
 export async function GET() {
   const session = await auth();
   if (!session?.user) {
@@ -34,6 +66,7 @@ export async function GET() {
     deviceName: d.deviceName,
     employeeName: d.employeeName ?? d.deviceName,
     lastSeenAt: d.lastSeenAt?.toISOString() ?? null,
+    ...serializeDeviceMeta(d),
     groups: d.groups.map((g) => g.group),
     latestLocation: d.locationRecords[0]
       ? {

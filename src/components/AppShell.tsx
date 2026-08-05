@@ -102,10 +102,10 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-svh overflow-hidden bg-background">
       <aside
         className={cn(
-          "sticky top-0 flex h-svh shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-out",
+          "flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-out",
           ready ? (collapsed ? "w-[64px]" : "w-[220px]") : "w-[220px]"
         )}
       >
@@ -222,8 +222,10 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
 
       <main
         className={cn(
-          "min-w-0 flex-1",
-          bleed ? "flex flex-col overflow-hidden" : "px-10 py-8"
+          "min-h-0 min-w-0 flex-1",
+          bleed
+            ? "flex flex-col overflow-hidden"
+            : "overflow-y-auto px-10 py-8"
         )}
       >
         {children}

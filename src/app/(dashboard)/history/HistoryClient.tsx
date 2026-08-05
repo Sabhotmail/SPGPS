@@ -10,6 +10,7 @@ import {
   detectStops,
   formatDateTime,
   formatDurationMinutes,
+  googleMapsNavUrl,
   haversineKm,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ const HistoryMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-full bg-muted/30" aria-label="กำลังโหลดแผนที่" />
+      <div className="h-full bg-background" aria-label="กำลังโหลดแผนที่" />
     ),
   }
 );
@@ -204,13 +205,15 @@ export default function HistoryClient() {
 
       <div className="relative flex min-h-0 flex-1 items-start gap-4 p-5">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <div className="relative h-[min(58vh,560px)] min-h-[320px] shrink-0 overflow-hidden rounded-lg border bg-muted/20">
+          <div className="relative h-[min(58vh,560px)] min-h-[320px] shrink-0 overflow-hidden rounded-lg border bg-background">
             <HistoryMap
               locations={locations}
               highlightIndex={sliderIndex}
               stops={stops}
               selectedStopId={selectedStopId}
               onSelectStop={selectStop}
+              speedLabel={speedKmh}
+              layoutKey={`${deviceId}:${date}:panel=${locations.length > 0 ? 1 : 0}:aside=${deviceId ? 1 : 0}`}
             />
 
             {!deviceId && (
@@ -233,55 +236,81 @@ export default function HistoryClient() {
             )}
           </div>
 
-          {locations.length > 0 && currentPoint && (
-            <div className="shrink-0 rounded-lg border bg-background px-4 py-3">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[13px] text-muted-foreground">
-                  จุดที่{" "}
-                  <span className="font-medium tabular-nums text-foreground">
-                    {sliderIndex + 1}
-                  </span>{" "}
-                  / {locations.length}
-                </p>
-                <p className="text-[13px] tabular-nums text-muted-foreground">
-                  {formatDateTime(currentPoint.recordedAt)}
-                </p>
-              </div>
-              <Slider
-                min={0}
-                max={Math.max(0, locations.length - 1)}
-                value={[sliderIndex]}
-                orientation="horizontal"
-                className="w-full"
-                onValueChange={(v) =>
-                  setSliderIndex(Array.isArray(v) ? (v[0] ?? 0) : v)
-                }
-              />
-              <dl className="mt-3 grid grid-cols-3 gap-4">
-                <div>
-                  <dt className="text-[11px] text-muted-foreground">Lat</dt>
-                  <dd className="mt-0.5 text-[13px] tabular-nums">
-                    {currentPoint.latitude.toFixed(5)}
-                  </dd>
+          {/* Reserve slider chrome height so map size stays stable after load */}
+          <div className="shrink-0 rounded-lg border bg-background px-4 py-3 min-h-[118px]">
+            {locations.length > 0 && currentPoint ? (
+              <>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[13px] text-muted-foreground">
+                    จุดที่{" "}
+                    <span className="font-medium tabular-nums text-foreground">
+                      {sliderIndex + 1}
+                    </span>{" "}
+                    / {locations.length}
+                  </p>
+                  <p className="text-[13px] tabular-nums text-muted-foreground">
+                    {formatDateTime(currentPoint.recordedAt)}
+                  </p>
                 </div>
-                <div>
-                  <dt className="text-[11px] text-muted-foreground">Lng</dt>
-                  <dd className="mt-0.5 text-[13px] tabular-nums">
-                    {currentPoint.longitude.toFixed(5)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] text-muted-foreground">ความเร็ว</dt>
-                  <dd className="mt-0.5 text-[13px] tabular-nums">
-                    {speedKmh ? `${speedKmh} km/h` : "—"}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          )}
+                <Slider
+                  min={0}
+                  max={Math.max(0, locations.length - 1)}
+                  value={[sliderIndex]}
+                  orientation="horizontal"
+                  className="w-full"
+                  onValueChange={(v) => {
+                    setSelectedStopId(null);
+                    setSliderIndex(Array.isArray(v) ? (v[0] ?? 0) : v);
+                  }}
+                />
+                <dl className="mt-3 grid grid-cols-3 gap-4">
+                  <div>
+                    <dt className="text-[11px] text-muted-foreground">Lat</dt>
+                    <dd className="mt-0.5 text-[13px] tabular-nums">
+                      {currentPoint.latitude.toFixed(5)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] text-muted-foreground">Lng</dt>
+                    <dd className="mt-0.5 text-[13px] tabular-nums">
+                      {currentPoint.longitude.toFixed(5)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] text-muted-foreground">
+                      ความเร็ว
+                    </dt>
+                    <dd className="mt-0.5 text-[13px] tabular-nums">
+                      {speedKmh ? `${speedKmh} km/h` : "—"}
+                    </dd>
+                  </div>
+                </dl>
+                <a
+                  href={googleMapsNavUrl(
+                    currentPoint.latitude,
+                    currentPoint.longitude
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-block text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  นำทางด้วย Google Maps →
+                </a>
+              </>
+            ) : (
+              <p className="py-6 text-center text-[12px] text-muted-foreground">
+                {deviceId
+                  ? loading
+                    ? "กำลังโหลดจุด..."
+                    : "โหลดเส้นทางเพื่อเลื่อนดูจุด"
+                  : "เลือกพนักงานแล้วโหลดเส้นทาง"}
+              </p>
+            )}
+          </div>
         </div>
 
-        {locations.length > 0 && (
+        {/* Always reserve stop column when a device is selected — prevents Leaflet gray strip */}
+        {deviceId ? (
           <aside className="flex h-[min(58vh,560px)] min-h-[320px] w-[280px] shrink-0 flex-col overflow-hidden rounded-lg border bg-background self-start">
             <div className="shrink-0 border-b px-4 py-3">
               <p className="text-[13px] font-medium">จุดที่หยุด</p>
@@ -290,7 +319,15 @@ export default function HistoryClient() {
               </p>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {stops.length === 0 ? (
+              {loading ? (
+                <p className="px-4 py-8 text-[12px] text-muted-foreground">
+                  กำลังโหลด...
+                </p>
+              ) : locations.length === 0 ? (
+                <p className="px-4 py-8 text-[12px] text-muted-foreground">
+                  ยังไม่มีจุดในวันนี้
+                </p>
+              ) : stops.length === 0 ? (
                 <p className="px-4 py-8 text-[12px] text-muted-foreground">
                   ไม่พบจุดหยุดตามเงื่อนไขในวันนี้
                 </p>
@@ -300,38 +337,54 @@ export default function HistoryClient() {
                     const active = selectedStopId === stop.id;
                     return (
                       <li key={stop.id}>
-                        <button
-                          type="button"
-                          onClick={() => selectStop(stop)}
+                        <div
                           className={cn(
-                            "w-full border-b px-4 py-3 text-left transition-colors hover:bg-muted/40",
+                            "border-b px-4 py-3 transition-colors",
                             active && "bg-muted/60"
                           )}
                         >
-                          <div className="flex items-start gap-2.5">
-                            <span
-                              className={cn(
-                                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-medium",
-                                active
-                                  ? "border-foreground bg-foreground text-background"
-                                  : "border-foreground/40"
-                              )}
-                            >
-                              {index + 1}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="text-[13px] font-medium">
-                                {formatDurationMinutes(stop.durationMinutes)}
-                              </p>
-                              <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-                                {formatDateTime(stop.startAt)}
-                              </p>
-                              <p className="text-[11px] tabular-nums text-muted-foreground">
-                                → {formatDateTime(stop.endAt)}
-                              </p>
+                          <button
+                            type="button"
+                            onClick={() => selectStop(stop)}
+                            className="w-full text-left hover:opacity-90"
+                          >
+                            <div className="flex items-start gap-2.5">
+                              <span
+                                className={cn(
+                                  "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-medium",
+                                  active
+                                    ? "border-foreground bg-foreground text-background"
+                                    : "border-foreground/40"
+                                )}
+                              >
+                                {index + 1}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="text-[13px] font-medium">
+                                  {formatDurationMinutes(stop.durationMinutes)}
+                                </p>
+                                <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+                                  {formatDateTime(stop.startAt)}
+                                </p>
+                                <p className="text-[11px] tabular-nums text-muted-foreground">
+                                  → {formatDateTime(stop.endAt)}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </button>
+                          </button>
+                          <a
+                            href={googleMapsNavUrl(
+                              stop.latitude,
+                              stop.longitude
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 ml-7 inline-block text-[11px] font-medium text-foreground underline-offset-2 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            นำทาง Google Maps
+                          </a>
+                        </div>
                       </li>
                     );
                   })}
@@ -339,7 +392,7 @@ export default function HistoryClient() {
               )}
             </div>
           </aside>
-        )}
+        ) : null}
       </div>
     </div>
   );

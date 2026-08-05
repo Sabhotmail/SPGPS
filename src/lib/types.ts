@@ -4,6 +4,19 @@ export type DeviceLocation = {
   deviceName: string;
   employeeName: string;
   lastSeenAt: string | null;
+  make: string | null;
+  model: string | null;
+  osVersion: string | null;
+  connectionStatus: string | null;
+  batteryPercent: number | null;
+  batteryCharging: boolean | null;
+  batteryHealth: string | null;
+  phoneNo: string | null;
+  simNetwork: string | null;
+  sfGroupName: string | null;
+  licenseActive: boolean | null;
+  licenseExpiresAt: string | null;
+  detailsFetchedAt: string | null;
   groups: { id: string; name: string }[];
   latestLocation: {
     latitude: number;
@@ -43,6 +56,31 @@ export function statusColor(status: "online" | "idle" | "offline"): string {
 
 export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("th-TH");
+}
+
+export function formatBattery(
+  percent: number | null | undefined,
+  charging?: boolean | null
+): string | null {
+  if (percent == null) return null;
+  const base = `${percent}%`;
+  return charging ? `${base} ⚡` : base;
+}
+
+export function formatConnectionStatus(
+  status: string | null | undefined
+): string | null {
+  if (!status) return null;
+  const s = status.trim().toLowerCase();
+  if (s === "online") return "Online";
+  if (s === "offline") return "Offline";
+  return status;
+}
+
+/** Google Maps navigation to a lat/lng destination. */
+export function googleMapsNavUrl(latitude: number, longitude: number): string {
+  const dest = `${latitude},${longitude}`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
 }
 
 export function haversineKm(

@@ -6,6 +6,28 @@ export interface ScalefusionDevice {
   status?: string;
 }
 
+/** Subset of GET /api/v3/devices/{id}.json used by SPGPS (no secrets). */
+export interface ScalefusionDeviceDetails {
+  id: number;
+  name?: string;
+  make?: string;
+  model?: string;
+  os_version?: string;
+  connection_status?: string;
+  connection_state?: string;
+  battery_status?: number;
+  battery_charging?: boolean;
+  battery_health?: string;
+  phone_no?: string;
+  sim_network?: string;
+  licence_active?: boolean;
+  licence_expires_at?: number;
+  last_seen_on?: string;
+  last_connected_at?: string;
+  device_group?: { id?: number; name?: string } | null;
+  license?: { expire_date?: string; code?: string } | null;
+}
+
 export interface ScalefusionLocation {
   latitude: number;
   longitude: number;

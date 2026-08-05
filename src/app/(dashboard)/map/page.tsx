@@ -4,11 +4,16 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { DeviceLocation, formatDateTime, getDeviceStatus } from "@/lib/types";
+import {
+  DeviceLocation,
+  formatBattery,
+  formatDateTime,
+  getDeviceStatus,
+  googleMapsNavUrl,
+} from "@/lib/types";
 import { StatusDot } from "@/components/ui/status-dot";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -23,7 +28,7 @@ const RealtimeMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-full bg-muted/30" aria-label="กำลังโหลดแผนที่" />
+      <div className="h-full bg-background" aria-label="กำลังโหลดแผนที่" />
     ),
   }
 );
@@ -90,15 +95,16 @@ export default function MapPage() {
   const selectedDevice = filteredDevices.find((d) => d.id === selectedDeviceId);
 
   return (
-    <div className="flex min-h-0 flex-1">
-      <aside className="flex w-[280px] shrink-0 flex-col border-r bg-background">
-        <header className="border-b px-4 py-4">
+    <div className="flex h-full min-h-0 flex-1 overflow-hidden">
+      <aside className="flex h-full w-[280px] shrink-0 flex-col overflow-hidden border-r bg-background">
+        <header className="shrink-0 border-b px-4 py-4">
           <h1 className="text-[15px] font-semibold tracking-tight">
             ตำแหน่งปัจจุบัน
           </h1>
           <p className="mt-1 text-[12px] text-muted-foreground">
             {filteredDevices.length} อุปกรณ์
-            {lastRefresh && ` · อัปเดต ${formatDateTime(lastRefresh.toISOString())}`}
+            {lastRefresh &&
+              ` · อัปเดต ${formatDateTime(lastRefresh.toISOString())}`}
           </p>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
             {(
@@ -116,7 +122,7 @@ export default function MapPage() {
           </div>
         </header>
 
-        <div className="space-y-2 border-b px-4 py-3">
+        <div className="shrink-0 space-y-2 border-b px-4 py-3">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -145,7 +151,7 @@ export default function MapPage() {
           </Select>
         </div>
 
-        <ScrollArea className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {loading ? (
             <EmptyState title="กำลังโหลด" />
           ) : filteredDevices.length === 0 ? (
@@ -164,8 +170,8 @@ export default function MapPage() {
                       type="button"
                       onClick={() => setSelectedDeviceId(d.id)}
                       className={cn(
-                        "w-full border-b px-4 py-2.5 text-left transition-colors hover:bg-muted/40",
-                        active && "bg-muted/60"
+                        "w-full border-b px-4 py-2.5 text-left transition-colors hover:bg-accent/60",
+                        active && "bg-accent"
                       )}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -177,38 +183,112 @@ export default function MapPage() {
                             {d.deviceName}
                           </p>
                         </div>
-                        <StatusDot status={status} />
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <StatusDot status={status} />
+                          {formatBattery(
+                            d.batteryPercent,
+                            d.batteryCharging
+                          ) && (
+                            <span
+                              className={cn(
+                                "text-[10px] tabular-nums",
+                                (d.batteryPercent ?? 100) <= 15
+                                  ? "text-destructive"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              {formatBattery(
+                                d.batteryPercent,
+                                d.batteryCharging
+                              )}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {d.lastSeenAt && (
-                        <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
-                          {formatDateTime(d.lastSeenAt)}
-                        </p>
-                      )}
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] tabular-nums text-muted-foreground">
+                        {d.connectionStatus && (
+                          <span className="rounded border px-1 py-px text-[10px]">
+                            SF {d.connectionStatus}
+                          </span>
+                        )}
+                        {d.lastSeenAt && (
+                          <span>{formatDateTime(d.lastSeenAt)}</span>
+                        )}
+                      </div>
                     </button>
                   </li>
                 );
               })}
             </ul>
           )}
-        </ScrollArea>
+        </div>
 
         {selectedDevice && (
-          <footer className="border-t px-4 py-3">
+          <footer className="shrink-0 border-t px-4 py-3">
             <p className="text-[11px] text-muted-foreground">ที่เลือก</p>
             <p className="mt-0.5 text-[13px] font-medium">
               {selectedDevice.employeeName}
             </p>
-            <Link
-              href={`/history?deviceId=${selectedDevice.id}`}
-              className="mt-2 inline-block text-[12px] text-foreground underline-offset-4 hover:underline"
-            >
-              ดูประวัติเส้นทาง
-            </Link>
+            <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+              {(selectedDevice.make || selectedDevice.model) && (
+                <p>
+                  {[
+                    selectedDevice.make
+                      ? selectedDevice.make.charAt(0).toUpperCase() +
+                        selectedDevice.make.slice(1)
+                      : null,
+                    selectedDevice.model,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  {selectedDevice.osVersion
+                    ? ` · Android ${selectedDevice.osVersion}`
+                    : ""}
+                </p>
+              )}
+              {formatBattery(
+                selectedDevice.batteryPercent,
+                selectedDevice.batteryCharging
+              ) && (
+                <p>
+                  แบต{" "}
+                  {formatBattery(
+                    selectedDevice.batteryPercent,
+                    selectedDevice.batteryCharging
+                  )}
+                  {selectedDevice.sfGroupName
+                    ? ` · ${selectedDevice.sfGroupName}`
+                    : ""}
+                </p>
+              )}
+              {selectedDevice.phoneNo && <p>{selectedDevice.phoneNo}</p>}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-3">
+              {selectedDevice.latestLocation && (
+                <a
+                  href={googleMapsNavUrl(
+                    selectedDevice.latestLocation.latitude,
+                    selectedDevice.latestLocation.longitude
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  นำทาง Google Maps
+                </a>
+              )}
+              <Link
+                href={`/history?deviceId=${selectedDevice.id}`}
+                className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
+              >
+                ดูประวัติ
+              </Link>
+            </div>
           </footer>
         )}
       </aside>
 
-      <div className="relative min-h-0 min-w-0 flex-1">
+      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
         <RealtimeMap
           devices={filteredDevices}
           selectedDeviceId={selectedDeviceId}

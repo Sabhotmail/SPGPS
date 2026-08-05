@@ -85,7 +85,7 @@
 
 .leaflet-container {
   font-family: inherit;
-  background: #f4f4f5;
+  background: #fff;
 }
 
 .spgps-map-icon {
@@ -94,13 +94,73 @@
 }
 
 .leaflet-popup-content-wrapper {
-  @apply rounded-sm border border-border bg-popover shadow-sm;
+  @apply rounded-md border border-border bg-background shadow-md;
 }
 
 .leaflet-popup-content {
-  @apply m-2.5 text-[13px] leading-snug;
+  margin: 0 !important;
+  width: auto !important;
+  @apply leading-snug;
 }
 
 .leaflet-popup-tip {
   @apply hidden;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  @apply top-1.5 right-1.5 text-muted-foreground;
+}
+
+.spgps-popup {
+  min-width: 220px;
+  max-width: 280px;
+  padding: 12px 14px 12px;
+}
+
+.spgps-popup-head {
+  padding-right: 16px;
+}
+
+.spgps-popup-title {
+  @apply text-[13px] font-semibold tracking-tight text-foreground;
+}
+
+.spgps-popup-sub {
+  @apply mt-0.5 text-[11px] text-muted-foreground;
+}
+
+.spgps-popup-status {
+  @apply mt-2.5 flex flex-wrap items-center gap-2;
+}
+
+.spgps-popup-chip {
+  @apply rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground;
+}
+
+.spgps-popup-meta {
+  @apply mt-2.5 space-y-1 border-t border-border pt-2.5;
+}
+
+.spgps-popup-meta > div {
+  @apply grid grid-cols-[52px_1fr] gap-2 text-[11px];
+}
+
+.spgps-popup-meta dt {
+  @apply text-muted-foreground;
+}
+
+.spgps-popup-meta dd {
+  @apply min-w-0 break-words text-foreground;
+}
+
+.spgps-popup-warn {
+  @apply text-destructive;
+}
+
+.spgps-popup-actions {
+  @apply mt-3 flex items-center gap-3 border-t border-border pt-2.5;
+}
+
+.spgps-popup-actions a {
+  @apply text-[12px] font-medium text-foreground underline-offset-4 hover:underline;
 }

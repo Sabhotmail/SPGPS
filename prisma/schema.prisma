@@ -57,6 +57,20 @@ model Device {
   employeeName         String?   @map("employee_name")
   isActive             Boolean   @default(true) @map("is_active")
   lastSeenAt           DateTime? @map("last_seen_at")
+  /// From Scalefusion GET /api/v3/devices/{id}.json (enriched on device sync)
+  make                 String?
+  model                String?
+  osVersion            String?   @map("os_version")
+  connectionStatus     String?   @map("connection_status")
+  batteryPercent       Int?      @map("battery_percent")
+  batteryCharging      Boolean?  @map("battery_charging")
+  batteryHealth        String?   @map("battery_health")
+  phoneNo              String?   @map("phone_no")
+  simNetwork           String?   @map("sim_network")
+  sfGroupName          String?   @map("sf_group_name")
+  licenseActive        Boolean?  @map("license_active")
+  licenseExpiresAt     DateTime? @map("license_expires_at")
+  detailsFetchedAt     DateTime? @map("details_fetched_at")
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 

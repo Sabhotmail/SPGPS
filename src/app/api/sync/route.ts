@@ -1,13 +1,14 @@
 import { auth } from "@/lib/auth";
 import {
   backfillLocationsFromScalefusion,
+  enrichDeviceDetailsFromScalefusion,
   fetchLocationsForDevice,
   logSyncFailure,
   pollLocationsFromScalefusion,
   syncDevicesFromScalefusion,
 } from "@/lib/scalefusion/sync-service";
 import { prisma } from "@/lib/db";
-import { SyncType } from "@prisma/client";
+import { SyncStatus, SyncType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300;
@@ -61,15 +62,17 @@ export async function POST(request: NextRequest) {
   const action = body.action ?? "devices";
   const syncType = syncTypeForAction(action);
 
-  // Per-device pull: short cooldown only (don't block behind full fleet poll)
-  if (action !== "device-poll") {
+  const skipFleetCooldown =
+    action === "device-poll" || action === "device-details";
+
+  if (!skipFleetCooldown) {
     const cooldownMsg = await assertManualCooldown(syncType);
     if (cooldownMsg) {
       return NextResponse.json({ error: cooldownMsg }, { status: 429 });
     }
   } else {
     const cooldownMsg = await assertManualCooldown(
-      SyncType.LOCATION_POLL,
+      syncType,
       DEVICE_PULL_COOLDOWN_MS
     );
     if (cooldownMsg) {
@@ -97,6 +100,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, ...result });
     }
 
+    if (action === "device-details") {
+      if (typeof body.deviceId !== "string" || !body.deviceId) {
+        return NextResponse.json(
+          { error: "deviceId is required" },
+          { status: 400 }
+        );
+      }
+      const detailsUpdated = await enrichDeviceDetailsFromScalefusion({
+        deviceId: body.deviceId,
+      });
+      await prisma.syncLog.create({
+        data: {
+          syncType: SyncType.DEVICE_SYNC,
+          status: SyncStatus.SUCCESS,
+          recordsAdded: detailsUpdated,
+          errorMessage: `device-details:${body.deviceId}`,
+        },
+      });
+      return NextResponse.json({ ok: true, detailsUpdated });
+    }
+
     if (action === "backfill") {
       const days = Math.min(
         UI_BACKFILL_MAX_DAYS,
@@ -117,7 +141,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const result = await syncDevicesFromScalefusion();
+    const result = await syncDevicesFromScalefusion({
+      enrichDetails: body.enrichDetails !== false,
+    });
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sync failed";

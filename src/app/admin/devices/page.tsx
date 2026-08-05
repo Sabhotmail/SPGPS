@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatDateTime } from "@/lib/types";
+import { formatBattery, formatDateTime } from "@/lib/types";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,19 @@ type Device = {
   employeeName: string | null;
   isActive: boolean;
   lastSeenAt: string | null;
+  make: string | null;
+  model: string | null;
+  osVersion: string | null;
+  connectionStatus: string | null;
+  batteryPercent: number | null;
+  batteryCharging: boolean | null;
+  batteryHealth: string | null;
+  phoneNo: string | null;
+  simNetwork: string | null;
+  sfGroupName: string | null;
+  licenseActive: boolean | null;
+  licenseExpiresAt: string | null;
+  detailsFetchedAt: string | null;
   groups: { id: string; name: string }[];
 };
 
@@ -62,7 +75,13 @@ export default function AdminDevicesPage() {
     setSyncing(false);
     if (res.ok) {
       const data = await res.json();
-      setMessage(`Sync แล้ว ${data.synced} อุปกรณ์ (${data.created} ใหม่)`);
+      setMessage(
+        `Sync แล้ว ${data.synced} อุปกรณ์ (${data.created} ใหม่` +
+          (data.detailsUpdated != null
+            ? `, รายละเอียด ${data.detailsUpdated}`
+            : "") +
+          `)`
+      );
       load();
     } else {
       const data = await res.json();
@@ -139,6 +158,24 @@ export default function AdminDevicesPage() {
     }
   }
 
+  async function refreshDetails(device: Device) {
+    setPullingId(device.id);
+    setMessage("");
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "device-details", deviceId: device.id }),
+    });
+    setPullingId(null);
+    if (res.ok) {
+      setMessage(`อัปเดตรายละเอียด ${device.deviceName} แล้ว`);
+      load();
+    } else {
+      const data = await res.json();
+      setMessage(data.error ?? "อัปเดตรายละเอียดล้มเหลว");
+    }
+  }
+
   async function updateDevice(
     id: string,
     data: { employeeName?: string; isActive?: boolean }
@@ -158,7 +195,7 @@ export default function AdminDevicesPage() {
     <div className="animate-fade-up">
       <PageHeader
         title="อุปกรณ์"
-        description="Sync จาก Scalefusion ตั้งชื่อพนักงาน และดึงพิกัดแยกตามอุปกรณ์ได้"
+        description="Sync จาก Scalefusion (รวมรายละเอียดเครื่องจาก v3) ตั้งชื่อพนักงาน และดึงพิกัดแยกตามอุปกรณ์ได้"
         actions={
           <>
             <Button
@@ -204,10 +241,13 @@ export default function AdminDevicesPage() {
               <th>SF ID</th>
               <th>อุปกรณ์</th>
               <th>พนักงาน</th>
+              <th>สถานะ SF</th>
+              <th>แบต</th>
+              <th>รุ่น</th>
               <th>Last seen</th>
               <th>กลุ่ม</th>
               <th>ติดตาม</th>
-              <th>พิกัด</th>
+              <th>การทำงาน</th>
             </tr>
           </thead>
           <tbody>
@@ -216,7 +256,14 @@ export default function AdminDevicesPage() {
                 <td className="font-mono text-[12px] text-muted-foreground">
                   {d.scalefusionDeviceId}
                 </td>
-                <td className="text-[13px]">{d.deviceName}</td>
+                <td className="text-[13px]">
+                  <div>{d.deviceName}</div>
+                  {d.sfGroupName && (
+                    <div className="text-[11px] text-muted-foreground">
+                      SF: {d.sfGroupName}
+                    </div>
+                  )}
+                </td>
                 <td>
                   <Input
                     defaultValue={d.employeeName ?? ""}
@@ -225,6 +272,24 @@ export default function AdminDevicesPage() {
                     }
                     className="h-8 max-w-[180px] text-[13px]"
                   />
+                </td>
+                <td className="text-[12px] text-muted-foreground">
+                  {d.connectionStatus ?? "—"}
+                </td>
+                <td
+                  className={`text-[12px] tabular-nums ${
+                    (d.batteryPercent ?? 100) <= 15
+                      ? "text-destructive"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {formatBattery(d.batteryPercent, d.batteryCharging) ?? "—"}
+                </td>
+                <td className="text-[12px] text-muted-foreground">
+                  {[d.make, d.model].filter(Boolean).join(" ") || "—"}
+                  {d.osVersion ? (
+                    <div className="text-[11px]">Android {d.osVersion}</div>
+                  ) : null}
                 </td>
                 <td className="text-[12px] tabular-nums text-muted-foreground">
                   {d.lastSeenAt ? formatDateTime(d.lastSeenAt) : "—"}
@@ -246,20 +311,32 @@ export default function AdminDevicesPage() {
                   </Button>
                 </td>
                 <td>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-[12px]"
-                    disabled={busy || !d.isActive}
-                    onClick={() => pullDevice(d)}
-                    title={
-                      d.isActive
-                        ? "ดึงพิกัดวันนี้ของอุปกรณ์นี้จาก Scalefusion"
-                        : "เปิดการติดตามก่อน"
-                    }
-                  >
-                    {pullingId === d.id ? "กำลังดึง..." : "ดึงพิกัด"}
-                  </Button>
+                  <div className="flex flex-wrap gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[12px]"
+                      disabled={busy || !d.isActive}
+                      onClick={() => pullDevice(d)}
+                      title={
+                        d.isActive
+                          ? "ดึงพิกัดวันนี้ของอุปกรณ์นี้จาก Scalefusion"
+                          : "เปิดการติดตามก่อน"
+                      }
+                    >
+                      {pullingId === d.id ? "..." : "พิกัด"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[12px]"
+                      disabled={busy}
+                      onClick={() => refreshDetails(d)}
+                      title="ดึงรายละเอียดเครื่องจาก Scalefusion v3"
+                    >
+                      รายละเอียด
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
