@@ -180,7 +180,7 @@ netsh advfirewall firewall add rule name="SPGPS Web 3003" dir=in action=allow pr
 | `AUTH_SECRET` | NextAuth secret (min 32 chars) |
 | `AUTH_TRUST_HOST` | `true` — จำเป็นสำหรับ `next start` / Tailscale |
 | `PORT` | พอร์ตเว็บ (ค่าเริ่มต้น `3000`) — ตั้งใน `.env` แล้ว restart service |
-| `AUTH_URL` / `NEXTAUTH_URL` | **ไม่ต้องตั้ง** (เว้นว่าง) — ถ้าตั้งเป็น `localhost` จะ redirect ไป localhost ตลอดตอนเข้าผ่าน Tailscale |
+| `AUTH_URL` / `NEXTAUTH_URL` | **อย่าตั้งเป็น localhost** — ถ้าตั้ง จะ redirect ไป localhost ตลอด. เว้นว่างให้ `AUTH_TRUST_HOST=true` ตาม Host ที่เปิด (public IP / Tailscale / LAN) หรือตั้งเป็น URL จริง เช่น `http://203.x.x.x:3003` |
 | `SMTP_HOST` | SMTP server (ค่าเริ่มต้นใช้งานกับ O365: `smtp.office365.com`) |
 | `SMTP_PORT` | พอร์ต SMTP (ค่าเริ่มต้น `587`) |
 | `SMTP_USER` | อีเมลกล่อง O365 ที่ใช้ส่ง (ต้องเปิด SMTP AUTH) |

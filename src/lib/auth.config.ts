@@ -8,32 +8,22 @@ export const authConfig = {
   },
   session: { strategy: "jwt" as const },
   callbacks: {
-    // next start/dev -H 0.0.0.0 can make Auth.js emit http://0.0.0.0:3000/...
+    // Prefer relative redirects so the browser keeps the Host the user opened
+    // (public IP, Tailscale, LAN) instead of forcing localhost.
     redirect({ url, baseUrl }) {
-      const fixHost = (raw: string) => {
-        const u = new URL(raw);
-        if (u.hostname === "0.0.0.0" || u.hostname === "::") {
-          u.hostname = "localhost";
-        }
-        return u;
-      };
+      if (url.startsWith("/")) return url;
 
-      const base = fixHost(baseUrl);
       try {
-        const target = url.startsWith("/")
-          ? new URL(url, base)
-          : fixHost(url);
-        if (target.origin === base.origin) return target.toString();
+        const target = new URL(url);
+        const base = new URL(baseUrl);
+        if (target.origin === base.origin) return url;
       } catch {
         /* fall through */
       }
-      return base.toString();
+
+      return url.startsWith("/") ? url : baseUrl;
     },
     authorized({ auth, request: { nextUrl } }) {
-      if (nextUrl.hostname === "0.0.0.0" || nextUrl.hostname === "::") {
-        nextUrl.hostname = "localhost";
-      }
-
       const isLoggedIn = !!auth?.user;
       const isAuthPage = nextUrl.pathname.startsWith("/login");
       const isProtected =
