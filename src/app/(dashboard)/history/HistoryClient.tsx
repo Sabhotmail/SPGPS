@@ -11,13 +11,13 @@ import {
   formatDateTime,
   formatDurationMinutes,
   googleMapsNavUrl,
-  haversineKm,
 } from "@/lib/types";
 import { todayYmdInAppTz } from "@/lib/app-timezone";
 import {
   computeHistoryCoverage,
   formatCoverageArea,
 } from "@/lib/coverage-area";
+import { formatSpeedKmh, segmentSpeedKmh } from "@/lib/route-speed";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { DeviceSearchSelect } from "@/components/ui/device-search-select";
@@ -132,20 +132,9 @@ export default function HistoryClient() {
   const currentPoint = locations[sliderIndex] ?? null;
   const speedKmh = useMemo(() => {
     if (sliderIndex === 0 || locations.length < 2) return null;
-    const prev = locations[sliderIndex - 1];
-    const curr = locations[sliderIndex];
-    const dist = haversineKm(
-      prev.latitude,
-      prev.longitude,
-      curr.latitude,
-      curr.longitude
-    );
-    const hours =
-      (new Date(curr.recordedAt).getTime() -
-        new Date(prev.recordedAt).getTime()) /
-      3600000;
-    if (hours <= 0) return null;
-    return (dist / hours).toFixed(1);
+    const prev = locations[sliderIndex - 1]!;
+    const curr = locations[sliderIndex]!;
+    return formatSpeedKmh(segmentSpeedKmh(prev, curr));
   }, [locations, sliderIndex]);
 
   const selectedDevice = devices.find((d) => d.id === deviceId);

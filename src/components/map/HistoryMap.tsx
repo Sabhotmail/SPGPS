@@ -1,7 +1,7 @@
 "use client";
 
 import L from "leaflet";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   MapContainer,
   Marker,
@@ -19,6 +19,11 @@ import {
 } from "@/lib/types";
 import type { CoverageResult } from "@/lib/coverage-area";
 import { coverageToDisplayGeoJson } from "@/lib/coverage-area";
+import {
+  SPEED_LEGEND,
+  buildSpeedSegments,
+} from "@/lib/route-speed";
+import "leaflet/dist/leaflet.css";
 
 const COVERAGE_STYLE: L.PathOptions = {
   fillColor: "#0d9488",
@@ -54,7 +59,55 @@ function CoverageOverlay({
 
   return null;
 }
-import "leaflet/dist/leaflet.css";
+
+function SpeedColoredRoute({ locations }: { locations: HistoryLocation[] }) {
+  const segments = useMemo(
+    () => buildSpeedSegments(locations),
+    [locations]
+  );
+
+  return (
+    <>
+      {segments.map((segment, index) => (
+        <Polyline
+          key={`${index}-${segment.color}-${segment.positions.length}`}
+          positions={segment.positions}
+          pathOptions={{
+            color: segment.color,
+            weight: 4,
+            opacity: 0.88,
+            lineCap: "round",
+            lineJoin: "round",
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+function SpeedLegend() {
+  return (
+    <div className="rounded-md border bg-background/95 px-2.5 py-2 shadow-sm">
+      <p className="mb-1.5 text-[10px] font-medium text-muted-foreground">
+        ความเร็ว (km/h)
+      </p>
+      <div className="flex flex-col gap-1">
+        {SPEED_LEGEND.map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5">
+            <span
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: item.color }}
+              aria-hidden
+            />
+            <span className="text-[10px] tabular-nums text-foreground">
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const highlightIcon = L.divIcon({
   className: "spgps-map-icon",
@@ -361,9 +414,6 @@ export function HistoryMap({
   layoutKey = "default",
 }: Props) {
   const defaultCenter: [number, number] = [13.7563, 100.5018];
-  const polyline = locations.map(
-    (l) => [l.latitude, l.longitude] as [number, number]
-  );
   const highlight = locations[highlightIndex];
   const selectedStop = stops.find((s) => s.id === selectedStopId) ?? null;
   const startPoint = locations[0] ?? null;
@@ -404,12 +454,7 @@ export function HistoryMap({
         {showCoverage && coverage && (
           <CoverageOverlay coverage={coverage} visible={showCoverage} />
         )}
-        {polyline.length > 1 && (
-          <Polyline
-            positions={polyline}
-            pathOptions={{ color: "#171717", weight: 3, opacity: 0.75 }}
-          />
-        )}
+        {locations.length > 1 && <SpeedColoredRoute locations={locations} />}
         {stops.map((stop, index) => (
           <StopMarker
             key={stop.id}
@@ -497,6 +542,12 @@ export function HistoryMap({
           />
         )}
       </MapContainer>
+
+      {locations.length > 1 && (
+        <div className="pointer-events-none absolute right-3 top-3 z-[1000]">
+          <SpeedLegend />
+        </div>
+      )}
     </div>
   );
 }
