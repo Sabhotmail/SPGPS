@@ -38,6 +38,16 @@ type SyncLog = {
   createdAt: string;
 };
 
+const SYNC_TYPE_LABEL: Record<string, string> = {
+  DEVICE_SYNC: "Sync อุปกรณ์",
+  LOCATION_POLL: "Poll ตำแหน่ง",
+  HISTORY_BACKFILL: "Backfill ประวัติ",
+};
+
+function syncTypeLabel(syncType: string) {
+  return SYNC_TYPE_LABEL[syncType] ?? syncType;
+}
+
 export default function AdminDevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [logs, setLogs] = useState<SyncLog[]>([]);
@@ -354,7 +364,7 @@ export default function AdminDevicesPage() {
                 <th>ประเภท</th>
                 <th>สถานะ</th>
                 <th>Records</th>
-                <th>Error</th>
+                <th>รายละเอียด</th>
               </tr>
             </thead>
             <tbody>
@@ -368,29 +378,40 @@ export default function AdminDevicesPage() {
                   </td>
                 </tr>
               ) : (
-                logs.map((l) => (
-                  <tr key={l.id}>
-                    <td className="text-[12px] tabular-nums text-muted-foreground">
-                      {formatDateTime(l.createdAt)}
-                    </td>
-                    <td className="text-[12px]">{l.syncType}</td>
-                    <td className="text-[12px]">
-                      <span
+                logs.map((l) => {
+                  const failed = l.status === "FAILURE";
+                  return (
+                    <tr key={l.id}>
+                      <td className="text-[12px] tabular-nums text-muted-foreground">
+                        {formatDateTime(l.createdAt)}
+                      </td>
+                      <td className="text-[12px]">
+                        <span title={l.syncType}>
+                          {syncTypeLabel(l.syncType)}
+                        </span>
+                      </td>
+                      <td className="text-[12px]">
+                        <span
+                          className={
+                            failed ? "text-destructive" : "text-foreground"
+                          }
+                        >
+                          {failed ? "ล้มเหลว" : "สำเร็จ"}
+                        </span>
+                      </td>
+                      <td className="tabular-nums">{l.recordsAdded}</td>
+                      <td
                         className={
-                          l.status === "SUCCESS"
-                            ? "text-foreground"
-                            : "text-destructive"
+                          failed
+                            ? "text-[12px] text-destructive"
+                            : "text-[12px] text-muted-foreground"
                         }
                       >
-                        {l.status}
-                      </span>
-                    </td>
-                    <td className="tabular-nums">{l.recordsAdded}</td>
-                    <td className="text-[12px] text-destructive">
-                      {l.errorMessage ?? "—"}
-                    </td>
-                  </tr>
-                ))
+                        {l.errorMessage ?? "—"}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
