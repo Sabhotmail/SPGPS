@@ -11,7 +11,7 @@ export async function GET() {
 
   const logs = await prisma.syncLog.findMany({
     orderBy: { createdAt: "desc" },
-    take: 20,
+    take: 100,
   });
 
   return NextResponse.json({

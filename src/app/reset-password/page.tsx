@@ -115,7 +115,10 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex min-h-svh items-center justify-center px-6 py-12">
       <div className="w-full max-w-[320px] animate-fade-up">
-        <p className="text-[11px] text-muted-foreground">SPGPS</p>
+        <p className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <span className="brand-mark" aria-hidden />
+          SPGPS
+        </p>
         <h1 className="mt-1 text-[15px] font-semibold tracking-tight">
           ตั้งรหัสผ่านใหม่
         </h1>

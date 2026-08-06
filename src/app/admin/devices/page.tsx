@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatBattery, formatDateTime } from "@/lib/types";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,25 @@ const SYNC_TYPE_LABEL: Record<string, string> = {
   HISTORY_BACKFILL: "Backfill ประวัติ",
 };
 
+const PAGE_SIZE = 20;
+
+function todayYmd(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function daysAgoYmd(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function syncTypeLabel(syncType: string) {
   return SYNC_TYPE_LABEL[syncType] ?? syncType;
 }
@@ -54,6 +73,9 @@ export default function AdminDevicesPage() {
   const [syncing, setSyncing] = useState(false);
   const [pullingId, setPullingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [page, setPage] = useState(1);
+  const [pullTarget, setPullTarget] = useState<Device | null>(null);
+  const [pullDate, setPullDate] = useState(todayYmd);
 
   async function load() {
     const [devicesRes, logsRes] = await Promise.all([
@@ -147,13 +169,17 @@ export default function AdminDevicesPage() {
     }
   }
 
-  async function pullDevice(device: Device) {
+  async function pullDevice(device: Device, date: string) {
     setPullingId(device.id);
     setMessage("");
     const res = await fetch("/api/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "device-poll", deviceId: device.id }),
+      body: JSON.stringify({
+        action: "device-poll",
+        deviceId: device.id,
+        date,
+      }),
     });
     setPullingId(null);
     if (res.ok) {
@@ -161,11 +187,20 @@ export default function AdminDevicesPage() {
       setMessage(
         `ดึง ${data.deviceName}: +${data.recordsAdded} จุดใหม่ (API ${data.apiCount} จุด · ${data.date})`
       );
+      setPullTarget(null);
       load();
     } else {
-      const data = await res.json();
-      setMessage(data.error ?? "ดึงพิกัดล้มเหลว");
+      const data = await res.json().catch(() => ({}));
+      setMessage(
+        typeof data.error === "string" ? data.error : "ดึงพิกัดล้มเหลว"
+      );
     }
+  }
+
+  function openPullDialog(device: Device) {
+    setPullDate(todayYmd());
+    setPullTarget(device);
+    setMessage("");
   }
 
   async function refreshDetails(device: Device) {
@@ -200,6 +235,20 @@ export default function AdminDevicesPage() {
 
   const activeCount = devices.filter((d) => d.isActive).length;
   const busy = syncing || pullingId != null;
+
+  const totalPages = Math.max(1, Math.ceil(devices.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageDevices = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return devices.slice(start, start + PAGE_SIZE);
+  }, [devices, currentPage]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const rangeStart = devices.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(currentPage * PAGE_SIZE, devices.length);
 
   return (
     <div className="animate-fade-up">
@@ -244,6 +293,61 @@ export default function AdminDevicesPage() {
         <p className="mb-6 text-[13px] text-muted-foreground">{message}</p>
       )}
 
+      {pullTarget && (
+        <div className="mb-4 rounded-lg border border-primary/25 bg-accent/60 p-3 sm:p-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium">
+                ดึงพิกัด · {pullTarget.employeeName ?? pullTarget.deviceName}
+              </p>
+              <p className="truncate text-[12px] text-muted-foreground">
+                {pullTarget.deviceName}
+              </p>
+            </div>
+            <div className="w-full space-y-1 sm:w-auto">
+              <label
+                htmlFor="pull-date"
+                className="block text-[12px] text-muted-foreground"
+              >
+                วันที่ต้องการ sync
+              </label>
+              <Input
+                id="pull-date"
+                type="date"
+                value={pullDate}
+                min={daysAgoYmd(30)}
+                max={todayYmd()}
+                onChange={(e) => setPullDate(e.target.value)}
+                className="h-9 w-full sm:w-[180px]"
+                autoFocus
+              />
+            </div>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 flex-1 sm:flex-none"
+                disabled={pullingId != null}
+                onClick={() => setPullTarget(null)}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                type="button"
+                className="h-9 flex-1 sm:flex-none"
+                disabled={!pullDate || pullingId != null}
+                onClick={() => pullDevice(pullTarget, pullDate)}
+              >
+                {pullingId === pullTarget.id ? "กำลังดึง..." : "ดึงพิกัด"}
+              </Button>
+            </div>
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Scalefusion เก็บประวัติประมาณ 30 วันล่าสุด
+          </p>
+        </div>
+      )}
+
       <div className="overflow-x-auto border">
         <table className="workspace-table">
           <thead>
@@ -261,7 +365,17 @@ export default function AdminDevicesPage() {
             </tr>
           </thead>
           <tbody>
-            {devices.map((d) => (
+            {pageDevices.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={10}
+                  className="py-8 text-center text-[13px] text-muted-foreground"
+                >
+                  ยังไม่มีอุปกรณ์
+                </td>
+              </tr>
+            ) : (
+              pageDevices.map((d) => (
               <tr key={d.id}>
                 <td className="font-mono text-[12px] text-muted-foreground">
                   {d.scalefusionDeviceId}
@@ -327,10 +441,10 @@ export default function AdminDevicesPage() {
                       size="sm"
                       className="h-7 text-[12px]"
                       disabled={busy || !d.isActive}
-                      onClick={() => pullDevice(d)}
+                      onClick={() => openPullDialog(d)}
                       title={
                         d.isActive
-                          ? "ดึงพิกัดวันนี้ของอุปกรณ์นี้จาก Scalefusion"
+                          ? "เลือกวันแล้วดึงพิกัดจาก Scalefusion"
                           : "เปิดการติดตามก่อน"
                       }
                     >
@@ -349,16 +463,55 @@ export default function AdminDevicesPage() {
                   </div>
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
+      {devices.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[12px] tabular-nums text-muted-foreground">
+            แสดง {rangeStart}–{rangeEnd} จาก {devices.length}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-[12px]"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              ก่อนหน้า
+            </Button>
+            <span className="text-[12px] tabular-nums text-muted-foreground">
+              หน้า {currentPage} / {totalPages}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-[12px]"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              ถัดไป
+            </Button>
+          </div>
+        </div>
+      )}
+
       <section className="mt-12">
-        <h2 className="mb-4 text-[15px] font-semibold">Sync logs</h2>
-        <div className="overflow-x-auto border">
+        <div className="mb-4 flex items-baseline justify-between gap-3">
+          <h2 className="text-[15px] font-semibold">Sync logs</h2>
+          <span className="text-[12px] tabular-nums text-muted-foreground">
+            {logs.length} รายการล่าสุด
+          </span>
+        </div>
+        <div className="max-h-[min(50vh,420px)] overflow-y-auto overflow-x-auto border">
           <table className="workspace-table">
-            <thead>
+            <thead className="sticky top-0 z-10 [&_th]:bg-muted/80 [&_th]:backdrop-blur-sm">
               <tr>
                 <th>เวลา</th>
                 <th>ประเภท</th>

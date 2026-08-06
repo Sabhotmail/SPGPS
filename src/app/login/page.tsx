@@ -41,21 +41,41 @@ function LoginForm() {
 
   return (
     <div className="grid min-h-svh lg:grid-cols-[1fr_420px]">
-      <section className="relative hidden flex-col justify-between border-r bg-muted/30 p-12 lg:flex">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">SPGPS</h1>
-          <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-muted-foreground">
+      <section className="relative hidden flex-col justify-between overflow-hidden border-r p-12 lg:flex">
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(160deg, oklch(0.94 0.04 205) 0%, oklch(0.97 0.02 220) 45%, oklch(0.985 0.01 230) 100%)",
+          }}
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -right-16 top-24 size-72 rounded-full opacity-40"
+          style={{
+            background:
+              "radial-gradient(circle, oklch(0.7 0.1 210 / 0.35), transparent 70%)",
+          }}
+          aria-hidden
+        />
+        <div className="relative">
+          <div className="flex items-center gap-2.5">
+            <span className="brand-mark" aria-hidden />
+            <h1 className="text-2xl font-semibold tracking-tight">SPGPS</h1>
+          </div>
+          <p className="mt-3 max-w-sm text-[13px] leading-relaxed text-muted-foreground">
             ติดตามตำแหน่งอุปกรณ์จาก Scalefusion และดูประวัติเส้นทางตามสิทธิ์กลุ่ม
           </p>
         </div>
-        <p className="text-[12px] text-muted-foreground">
+        <p className="relative text-[12px] text-muted-foreground">
           สำหรับผู้ใช้ภายในองค์กรเท่านั้น
         </p>
       </section>
 
       <section className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-[320px] animate-fade-up">
-          <div className="mb-8 lg:hidden">
+          <div className="mb-8 flex items-center gap-2 lg:hidden">
+            <span className="brand-mark" aria-hidden />
             <h1 className="text-xl font-semibold tracking-tight">SPGPS</h1>
           </div>
 

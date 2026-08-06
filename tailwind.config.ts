@@ -55,9 +55,9 @@ const config: Config = {
           ring: "var(--sidebar-ring)",
         },
         status: {
-          online: "#16a34a",
+          online: "#0d9488",
           idle: "#d97706",
-          offline: "#a3a3a3",
+          offline: "#94a3b8",
         },
       },
       borderRadius: {
@@ -78,9 +78,14 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(6px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "nav-in": {
+          from: { opacity: "0", transform: "scaleY(0.6)" },
+          to: { opacity: "1", transform: "scaleY(1)" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.4s ease-out both",
+        "nav-in": "nav-in 0.2s ease-out both",
       },
     },
   },

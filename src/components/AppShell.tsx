@@ -67,17 +67,22 @@ function NavLink({
         "group relative flex items-center rounded-sm text-[13px] transition-colors",
         collapsed ? "justify-center px-0 py-2" : "gap-2.5 py-1.5 pl-3 pr-2",
         active
-          ? "font-medium text-foreground"
-          : "text-muted-foreground hover:text-foreground"
+          ? "bg-sidebar-accent/70 font-medium text-sidebar-accent-foreground"
+          : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground"
       )}
     >
       {active && !collapsed && (
-        <span className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-foreground" />
+        <span className="absolute inset-y-1 left-0 w-0.5 origin-center rounded-full bg-primary animate-nav-in" />
       )}
       {active && collapsed && (
-        <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-foreground" />
+        <span className="absolute inset-y-1.5 left-0 w-0.5 origin-center rounded-full bg-primary animate-nav-in" />
       )}
-      <Icon className="size-[15px] shrink-0 opacity-70 group-hover:opacity-100" />
+      <Icon
+        className={cn(
+          "size-[15px] shrink-0 transition-opacity",
+          active ? "opacity-100 text-primary" : "opacity-70 group-hover:opacity-100"
+        )}
+      />
       {!collapsed && <span className="truncate">{label}</span>}
     </Link>
   );
@@ -100,7 +105,7 @@ function MobileTabLink({
       className={cn(
         "flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[10px] transition-colors",
         active
-          ? "font-medium text-foreground"
+          ? "font-medium text-primary"
           : "text-muted-foreground active:text-foreground"
       )}
     >
@@ -164,11 +169,17 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
             className={cn("min-w-0 flex-1", collapsed && "text-center")}
             title="SPGPS"
           >
-            <span className="block text-[15px] font-semibold tracking-tight text-foreground">
-              {collapsed ? "SP" : "SPGPS"}
+            <span
+              className={cn(
+                "flex items-center gap-2 text-[15px] font-semibold tracking-tight text-foreground",
+                collapsed && "justify-center"
+              )}
+            >
+              <span className="brand-mark" aria-hidden />
+              {!collapsed && "SPGPS"}
             </span>
             {!collapsed && (
-              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+              <span className="mt-0.5 block pl-4 text-[11px] text-muted-foreground">
                 Fleet tracking
               </span>
             )}

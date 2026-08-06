@@ -7,10 +7,13 @@ type Props = {
 
 export function PageHeader({ title, description, actions, meta }: Props) {
   return (
-    <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b pb-6 animate-fade-up">
+    <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border/80 pb-6 animate-fade-up">
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="relative text-xl font-semibold tracking-tight">
+            <span className="absolute -left-3 top-1.5 hidden h-5 w-0.5 rounded-full bg-primary sm:block" />
+            {title}
+          </h1>
           {meta}
         </div>
         {description && (
