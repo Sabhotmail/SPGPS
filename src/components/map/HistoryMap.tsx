@@ -17,6 +17,43 @@ import {
   formatDurationMinutes,
   googleMapsNavUrl,
 } from "@/lib/types";
+import type { CoverageResult } from "@/lib/coverage-area";
+import { coverageToDisplayGeoJson } from "@/lib/coverage-area";
+
+const COVERAGE_STYLE: L.PathOptions = {
+  fillColor: "#0d9488",
+  fillOpacity: 0.32,
+  color: "#0f766e",
+  weight: 1,
+  opacity: 0.55,
+};
+
+function CoverageOverlay({
+  coverage,
+  visible,
+}: {
+  coverage: CoverageResult;
+  visible: boolean;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const data = coverageToDisplayGeoJson(coverage);
+    const layer = L.geoJSON(data, {
+      style: () => COVERAGE_STYLE,
+      interactive: false,
+    });
+    layer.addTo(map);
+
+    return () => {
+      map.removeLayer(layer);
+    };
+  }, [map, coverage, visible]);
+
+  return null;
+}
 import "leaflet/dist/leaflet.css";
 
 const highlightIcon = L.divIcon({
@@ -306,6 +343,8 @@ type Props = {
   selectedStopId?: string | null;
   onSelectStop?: (stop: StopPoint) => void;
   speedLabel?: string | null;
+  coverage?: CoverageResult | null;
+  showCoverage?: boolean;
   /** Bump when surrounding chrome (stop list / slider) mounts or resizes. */
   layoutKey?: string;
 };
@@ -317,6 +356,8 @@ export function HistoryMap({
   selectedStopId,
   onSelectStop,
   speedLabel,
+  coverage,
+  showCoverage = true,
   layoutKey = "default",
 }: Props) {
   const defaultCenter: [number, number] = [13.7563, 100.5018];
@@ -338,7 +379,7 @@ export function HistoryMap({
     locations.length > 0
       ? `${locations[0]!.id}-${locations.length}`
       : "empty";
-  const sizeKey = `${layoutKey}:${mapKey}:stops=${stops.length}`;
+  const sizeKey = `${layoutKey}:${mapKey}:stops=${stops.length}:cov=${showCoverage && coverage ? coverage.cellCount : 0}`;
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -360,6 +401,9 @@ export function HistoryMap({
           <FitRoute locations={locations} layoutKey={sizeKey} />
         )}
         <PanToStop stop={selectedStop} />
+        {showCoverage && coverage && (
+          <CoverageOverlay coverage={coverage} visible={showCoverage} />
+        )}
         {polyline.length > 1 && (
           <Polyline
             positions={polyline}

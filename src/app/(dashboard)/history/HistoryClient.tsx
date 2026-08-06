@@ -14,6 +14,10 @@ import {
   haversineKm,
 } from "@/lib/types";
 import { todayYmdInAppTz } from "@/lib/app-timezone";
+import {
+  computeHistoryCoverage,
+  formatCoverageArea,
+} from "@/lib/coverage-area";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { DeviceSearchSelect } from "@/components/ui/device-search-select";
@@ -44,6 +48,7 @@ export default function HistoryClient() {
     {}
   );
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
+  const [showCoverage, setShowCoverage] = useState(true);
 
   useEffect(() => {
     fetch("/api/devices")
@@ -119,6 +124,11 @@ export default function HistoryClient() {
     [locations]
   );
 
+  const coverage = useMemo(
+    () => computeHistoryCoverage(locations),
+    [locations]
+  );
+
   const currentPoint = locations[sliderIndex] ?? null;
   const speedKmh = useMemo(() => {
     if (sliderIndex === 0 || locations.length < 2) return null;
@@ -191,7 +201,7 @@ export default function HistoryClient() {
           </p>
           <p className="text-[11px] tabular-nums text-muted-foreground">
             {locations.length > 0
-              ? `${locations.length} จุด · หยุด ${stops.length} แห่ง · ${date}`
+              ? `${locations.length} จุด · หยุด ${stops.length} แห่ง · ครอบคลุม ${coverage ? formatCoverageArea(coverage.areaSqMeters) : "—"} · ${date}`
               : deviceId
                 ? pointCountForDate
                   ? `มี ${pointCountForDate} จุดในฐานข้อมูล · กดโหลด`
@@ -211,8 +221,33 @@ export default function HistoryClient() {
               selectedStopId={selectedStopId}
               onSelectStop={selectStop}
               speedLabel={speedKmh}
+              coverage={coverage}
+              showCoverage={showCoverage}
               layoutKey={`${deviceId}:${date}:panel=${locations.length > 0 ? 1 : 0}:aside=${deviceId ? 1 : 0}`}
             />
+
+            {locations.length > 0 && coverage && (
+              <div className="absolute bottom-3 left-3 z-[1000] flex flex-wrap items-center gap-2">
+                <div className="rounded-md border bg-background/95 px-2.5 py-1.5 text-[11px] shadow-sm">
+                  <span className="inline-block size-2 rounded-sm bg-[#0d9488]/40 align-middle" />{" "}
+                  ครอบคลุม{" "}
+                  <span className="font-medium tabular-nums text-foreground">
+                    {formatCoverageArea(coverage.areaSqMeters)}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    (รัศมี {coverage.bufferMeters} ม.)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCoverage((v) => !v)}
+                  className="rounded-md border bg-background/95 px-2.5 py-1.5 text-[11px] shadow-sm transition-colors hover:bg-muted/60"
+                >
+                  {showCoverage ? "ซ่อนพื้นที่" : "แสดงพื้นที่"}
+                </button>
+              </div>
+            )}
 
             {!deviceId && (
               <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center px-3">
