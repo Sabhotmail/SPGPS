@@ -1,4 +1,12 @@
 import { Prisma, SyncStatus, SyncType } from "@prisma/client";
+import {
+  addDaysToYmd,
+  appDayRange,
+  buildBackfillDates,
+  formatYmdInAppTz,
+  getAppTimezone,
+  todayYmdInAppTz,
+} from "../app-timezone";
 import { prisma } from "../db";
 import {
   ScalefusionDateOutOfRangeError,
@@ -13,30 +21,7 @@ import {
 import type { ScalefusionDeviceDetails } from "./types";
 import { setRateLimitMode } from "./rate-limiter";
 
-function formatDateUTC(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-function startOfUtcDay(dateStr: string): Date {
-  return new Date(`${dateStr}T00:00:00.000Z`);
-}
-
-function endOfUtcDay(dateStr: string): Date {
-  return new Date(`${dateStr}T23:59:59.999Z`);
-}
-
-/** Dates from `days` ago through today (UTC), oldest first. */
-export function buildBackfillDates(days: number, until = new Date()): string[] {
-  const n = Math.max(1, Math.min(days, 90));
-  const dates: string[] = [];
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(until);
-    d.setUTCHours(12, 0, 0, 0);
-    d.setUTCDate(d.getUTCDate() - i);
-    dates.push(formatDateUTC(d));
-  }
-  return dates;
-}
+export { buildBackfillDates } from "../app-timezone";
 
 async function insertLocations(
   deviceId: string,
@@ -76,7 +61,7 @@ async function insertLocations(
 }
 
 /**
- * Pull one device's locations for a given day (default: today UTC).
+ * Pull one device's locations for a given day (default: today in app TZ).
  * Uses /locations.json?date= — 1 API call.
  */
 export async function fetchLocationsForDevice(options: {
@@ -96,7 +81,7 @@ export async function fetchLocationsForDevice(options: {
     throw new Error("Device not found");
   }
 
-  const date = options.date ?? formatDateUTC(new Date());
+  const date = options.date ?? todayYmdInAppTz();
   const sfId = Number(device.scalefusionDeviceId);
   const fetchedAt = new Date();
 
@@ -402,14 +387,16 @@ async function loadExistingDayKeys(
 ): Promise<Set<string>> {
   if (deviceIds.length === 0) return new Set();
 
+  const tz = getAppTimezone();
+
   const rows = await prisma.$queryRaw<{ device_id: string; date: string }[]>`
     SELECT
       device_id,
-      to_char(recorded_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date
+      to_char(recorded_at AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS date
     FROM location_records
     WHERE device_id IN (${Prisma.join(deviceIds)})
-      AND recorded_at >= ${startOfUtcDay(fromDate)}
-      AND recorded_at <= ${endOfUtcDay(toDate)}
+      AND recorded_at >= ${appDayRange(fromDate).start}
+      AND recorded_at <= ${appDayRange(toDate).end}
     GROUP BY device_id, 2
   `;
 
@@ -544,13 +531,9 @@ async function runBackfillJobs(args: {
           const min = error.minDate;
           let nextCutoff: string;
           if (min) {
-            const next = new Date(min);
-            next.setUTCDate(next.getUTCDate() + 1);
-            nextCutoff = formatDateUTC(next);
+            nextCutoff = addDaysToYmd(formatYmdInAppTz(new Date(min)), 1);
           } else {
-            const next = new Date(`${job.date}T12:00:00.000Z`);
-            next.setUTCDate(next.getUTCDate() + 1);
-            nextCutoff = formatDateUTC(next);
+            nextCutoff = addDaysToYmd(job.date, 1);
           }
           if (!cutoffDate || nextCutoff > cutoffDate) {
             cutoffDate = nextCutoff;

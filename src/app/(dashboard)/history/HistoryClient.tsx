@@ -13,6 +13,7 @@ import {
   googleMapsNavUrl,
   haversineKm,
 } from "@/lib/types";
+import { todayYmdInAppTz } from "@/lib/app-timezone";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { DeviceSearchSelect } from "@/components/ui/device-search-select";
@@ -29,17 +30,13 @@ const HistoryMap = dynamic(
   }
 );
 
-function todayString(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export default function HistoryClient() {
   const searchParams = useSearchParams();
   const initialDeviceId = searchParams.get("deviceId") ?? "";
 
   const [devices, setDevices] = useState<DeviceLocation[]>([]);
   const [deviceId, setDeviceId] = useState(initialDeviceId);
-  const [date, setDate] = useState(todayString());
+  const [date, setDate] = useState(todayYmdInAppTz());
   const [locations, setLocations] = useState<HistoryLocation[]>([]);
   const [sliderIndex, setSliderIndex] = useState(0);
   const [loading, setLoading] = useState(false);

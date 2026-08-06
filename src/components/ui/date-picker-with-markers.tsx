@@ -2,16 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatYmdInAppTz, todayYmdInAppTz } from "@/lib/app-timezone";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
-
-function formatYmd(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 function parseYmd(value: string): Date {
   const [y, m, d] = value.split("-").map(Number);
@@ -84,7 +78,7 @@ export function DatePickerWithMarkers({
     for (let i = 0; i < firstDow; i++) {
       const day = prevDays - firstDow + 1 + i;
       const d = new Date(year, month - 1, day);
-      const date = formatYmd(d);
+      const date = formatYmdInAppTz(d);
       list.push({
         date,
         day,
@@ -95,7 +89,7 @@ export function DatePickerWithMarkers({
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = formatYmd(new Date(year, month, day));
+      const date = formatYmdInAppTz(new Date(year, month, day));
       list.push({
         date,
         day,
@@ -108,7 +102,7 @@ export function DatePickerWithMarkers({
     while (list.length % 7 !== 0) {
       const day = list.length - (firstDow + daysInMonth) + 1;
       const d = new Date(year, month + 1, day);
-      const date = formatYmd(d);
+      const date = formatYmdInAppTz(d);
       list.push({
         date,
         day,
@@ -126,7 +120,7 @@ export function DatePickerWithMarkers({
     year: "numeric",
   });
 
-  const today = formatYmd(new Date());
+  const today = todayYmdInAppTz();
 
   return (
     <div ref={rootRef} className={cn("relative", className)}>

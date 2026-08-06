@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { appDayRange } from "@/lib/app-timezone";
 import { canAccessDevice } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
@@ -28,8 +29,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const start = new Date(`${date}T00:00:00.000Z`);
-  const end = new Date(`${date}T23:59:59.999Z`);
+  const { start, end } = appDayRange(date);
 
   const records = await prisma.locationRecord.findMany({
     where: {

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { getAppTimezone } from "@/lib/app-timezone";
 import { canAccessDevice } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
@@ -24,11 +25,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const tz = getAppTimezone();
+
   const rows = await prisma.$queryRaw<
     { date: string; count: number }[]
   >(Prisma.sql`
     SELECT
-      to_char(recorded_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date,
+      to_char(recorded_at AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS date,
       COUNT(*)::int AS count
     FROM location_records
     WHERE device_id = ${deviceId}

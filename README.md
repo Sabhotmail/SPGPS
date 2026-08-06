@@ -31,6 +31,8 @@ npm run db:seed
 npm run dev
 ```
 
+วันในหน้า **ประวัติเส้นทาง** และปฏิทินจุดพิกัดอิง `APP_TIMEZONE` (ค่าเริ่มต้น **Asia/Bangkok**) — ไม่ใช่ UTC
+
 เปิด http://localhost:3000 — Login ด้วย:
 - Email: `admin@spgps.local`
 - Password: `admin123`
@@ -189,6 +191,8 @@ netsh advfirewall firewall add rule name="SPGPS Web 3003" dir=in action=allow pr
 | `POLL_INTERVAL_MS` | Interval poll (default 180000 = 3 นาที). ถูกข้ามถ้ามี POLL_SCHEDULE |
 | `POLL_SCHEDULE` | เวลาที่กำหนด เช่น `08:00,12:00,17:00` (ถ้าตั้งค่าจะใช้โหมดนี้) |
 | `POLL_TZ` | Timezone ของ schedule (default Asia/Bangkok) |
+| `APP_TIMEZONE` | Timezone สำหรับแบ่งวันในประวัติ/ปฏิทิน/backfill (default `Asia/Bangkok`) |
+| `NEXT_PUBLIC_APP_TIMEZONE` | ค่าเดียวกับ `APP_TIMEZONE` สำหรับ UI (date picker, วันนี้) |
 | `POLL_ON_STARTUP` | `0` = ไม่ poll ตอนสตาร์ทในโหมด schedule |
 | `SCALEFUSION_MIN_GAP_MS` | Min gap between API calls (default ~2100) |
 | `BACKFILL_CONCURRENCY` | Parallel backfill fetches (default 8) |

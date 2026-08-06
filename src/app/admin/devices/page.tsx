@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { daysAgoYmdInAppTz, todayYmdInAppTz } from "@/lib/app-timezone";
 import { formatBattery, formatDateTime } from "@/lib/types";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -46,23 +47,6 @@ const SYNC_TYPE_LABEL: Record<string, string> = {
 
 const PAGE_SIZE = 20;
 
-function todayYmd(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function daysAgoYmd(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 function syncTypeLabel(syncType: string) {
   return SYNC_TYPE_LABEL[syncType] ?? syncType;
 }
@@ -75,7 +59,7 @@ export default function AdminDevicesPage() {
   const [message, setMessage] = useState("");
   const [page, setPage] = useState(1);
   const [pullTarget, setPullTarget] = useState<Device | null>(null);
-  const [pullDate, setPullDate] = useState(todayYmd);
+  const [pullDate, setPullDate] = useState(todayYmdInAppTz);
 
   async function load() {
     const [devicesRes, logsRes] = await Promise.all([
@@ -198,7 +182,7 @@ export default function AdminDevicesPage() {
   }
 
   function openPullDialog(device: Device) {
-    setPullDate(todayYmd());
+    setPullDate(todayYmdInAppTz());
     setPullTarget(device);
     setMessage("");
   }
@@ -315,8 +299,8 @@ export default function AdminDevicesPage() {
                 id="pull-date"
                 type="date"
                 value={pullDate}
-                min={daysAgoYmd(30)}
-                max={todayYmd()}
+                min={daysAgoYmdInAppTz(30)}
+                max={todayYmdInAppTz()}
                 onChange={(e) => setPullDate(e.target.value)}
                 className="h-9 w-full sm:w-[180px]"
                 autoFocus
