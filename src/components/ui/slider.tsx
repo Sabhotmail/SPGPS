@@ -20,8 +20,10 @@ function Slider({
   return (
     <SliderPrimitive.Root
       className={cn(
-        "relative flex touch-none select-none",
-        orientation === "horizontal" ? "w-full items-center" : "h-full w-auto flex-col items-center",
+        "relative isolate flex touch-none select-none",
+        orientation === "horizontal"
+          ? "h-8 w-full items-center"
+          : "h-full w-8 flex-col items-center",
         className
       )}
       data-slot="slider"
@@ -35,24 +37,24 @@ function Slider({
     >
       <SliderPrimitive.Control
         className={cn(
-          "relative flex touch-none items-center select-none data-disabled:opacity-50",
-          orientation === "horizontal"
-            ? "h-4 w-full"
-            : "h-full min-h-40 w-4 flex-col"
+          "relative flex w-full touch-none items-center select-none data-disabled:opacity-50",
+          orientation === "horizontal" ? "h-8" : "h-full min-h-40 w-8 flex-col"
         )}
       >
         <SliderPrimitive.Track
           data-slot="slider-track"
           className={cn(
             "relative grow overflow-hidden rounded-full bg-muted select-none",
-            orientation === "horizontal" ? "h-1 w-full" : "h-full w-1"
+            orientation === "horizontal" ? "h-1.5 w-full" : "h-full w-1.5"
           )}
         >
           <SliderPrimitive.Indicator
             data-slot="slider-range"
             className={cn(
-              "bg-primary select-none",
-              orientation === "horizontal" ? "h-full" : "w-full"
+              "absolute bg-primary select-none",
+              orientation === "horizontal"
+                ? "top-0 left-0 h-full"
+                : "bottom-0 left-0 w-full"
             )}
           />
         </SliderPrimitive.Track>
@@ -60,7 +62,7 @@ function Slider({
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
             key={index}
-            className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
+            className="relative z-10 block size-4 shrink-0 rounded-full border border-ring bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-3 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
           />
         ))}
       </SliderPrimitive.Control>

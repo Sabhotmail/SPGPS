@@ -226,3 +226,27 @@
 .spgps-popup-actions a {
   @apply text-[12px] font-medium text-primary underline-offset-4 hover:underline;
 }
+
+/* Keep Base UI slider fill inside its track (avoids mobile overlap). */
+[data-slot="slider"] {
+  contain: layout style;
+  isolation: isolate;
+}
+
+[data-slot="slider-control"] {
+  position: relative;
+  overflow: visible;
+}
+
+[data-slot="slider-track"] {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+[data-slot="slider-range"] {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  max-width: 100%;
+}

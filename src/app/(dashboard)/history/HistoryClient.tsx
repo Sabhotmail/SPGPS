@@ -211,8 +211,8 @@ export default function HistoryClient() {
         )}
       </header>
 
-      <div className="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain p-2 sm:gap-3 sm:p-5 lg:flex-row lg:items-start lg:overflow-hidden">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 sm:gap-3 lg:overflow-hidden">
+      <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-2 sm:gap-3 sm:p-5 lg:flex-row lg:items-start lg:overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 lg:overflow-hidden">
           <div className="relative h-[min(52vh,420px)] min-h-[280px] shrink-0 overflow-hidden rounded-lg border bg-background sm:h-[min(50vh,480px)] lg:h-[min(58vh,560px)] lg:min-h-[320px]">
             <HistoryMap
               locations={locations}
@@ -268,7 +268,7 @@ export default function HistoryClient() {
             )}
           </div>
 
-          <div className="shrink-0 rounded-lg border bg-background px-3 py-2.5 sm:px-4 sm:py-3">
+          <div className="relative z-0 shrink-0 overflow-hidden rounded-lg border bg-background px-3 py-2.5 sm:px-4 sm:py-3">
             {locations.length > 0 && currentPoint ? (
               <>
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -288,17 +288,19 @@ export default function HistoryClient() {
                     {formatDateTime(currentPoint.recordedAt)}
                   </p>
                 </div>
-                <Slider
-                  min={0}
-                  max={Math.max(0, locations.length - 1)}
-                  value={[sliderIndex]}
-                  orientation="horizontal"
-                  className="w-full"
-                  onValueChange={(v) => {
-                    setSelectedStopId(null);
-                    setSliderIndex(Array.isArray(v) ? (v[0] ?? 0) : v);
-                  }}
-                />
+                <div className="relative z-0 my-1 overflow-hidden py-1">
+                  <Slider
+                    min={0}
+                    max={Math.max(0, locations.length - 1)}
+                    value={[sliderIndex]}
+                    orientation="horizontal"
+                    className="w-full"
+                    onValueChange={(v) => {
+                      setSelectedStopId(null);
+                      setSliderIndex(Array.isArray(v) ? (v[0] ?? 0) : v);
+                    }}
+                  />
+                </div>
                 <dl className="mt-2.5 grid grid-cols-3 gap-2 sm:mt-3 sm:gap-4">
                   <div>
                     <dt className="text-[10px] text-muted-foreground sm:text-[11px]">
@@ -365,8 +367,8 @@ export default function HistoryClient() {
         {deviceId ? (
           <aside
             className={cn(
-              "flex w-full shrink-0 flex-col overflow-hidden rounded-lg border bg-background lg:h-[min(58vh,560px)] lg:max-h-none lg:min-h-[320px] lg:w-[280px] lg:self-start",
-              stopsOpen ? "max-h-[50vh]" : "max-h-none lg:max-h-none"
+              "relative z-10 flex w-full shrink-0 flex-col overflow-hidden rounded-lg border bg-background lg:h-[min(58vh,560px)] lg:max-h-none lg:min-h-[320px] lg:w-[280px] lg:self-start",
+              stopsOpen ? "max-h-[45vh]" : "max-h-none"
             )}
           >
             <button
