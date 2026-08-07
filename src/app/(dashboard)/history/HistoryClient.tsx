@@ -50,6 +50,7 @@ export default function HistoryClient() {
   );
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [showCoverage, setShowCoverage] = useState(true);
+  const [stopsOpen, setStopsOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/devices")
@@ -154,56 +155,65 @@ export default function HistoryClient() {
   function selectStop(stop: StopPoint) {
     setSelectedStopId(stop.id);
     setSliderIndex(stop.startIndex);
+    setStopsOpen(false);
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <header className="relative z-[1100] mx-3 mt-3 flex shrink-0 flex-wrap items-end gap-3 rounded-lg border bg-background px-3 py-3 sm:mx-5 sm:mt-5 sm:px-4">
-        <div className="min-w-0 flex-1 basis-full sm:basis-[220px]">
-          <p className="mb-1 text-[11px] text-muted-foreground">พนักงาน</p>
-          <DeviceSearchSelect
-            devices={deviceOptions}
-            value={deviceId}
-            onChange={setDeviceId}
-          />
+      <header className="relative z-[1100] mx-2 mt-2 shrink-0 rounded-lg border bg-background px-2.5 py-2.5 sm:mx-5 sm:mt-5 sm:px-4 sm:py-3">
+        <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+          <div className="min-w-0 flex-1 basis-full sm:basis-[220px]">
+            <p className="mb-1 text-[11px] text-muted-foreground">พนักงาน</p>
+            <DeviceSearchSelect
+              devices={deviceOptions}
+              value={deviceId}
+              onChange={setDeviceId}
+            />
+          </div>
+          <div className="min-w-0 flex-1 sm:w-[170px] sm:flex-none">
+            <p className="mb-1 text-[11px] text-muted-foreground">วันที่</p>
+            <DatePickerWithMarkers
+              value={date}
+              onChange={setDate}
+              datesWithData={datesWithData}
+              disabled={!deviceId}
+            />
+          </div>
+          <Button
+            onClick={fetchHistory}
+            disabled={!deviceId || loading}
+            className="h-9 shrink-0 px-4 sm:h-8 sm:flex-none"
+          >
+            {loading ? "..." : "โหลด"}
+          </Button>
+          <div className="ml-auto hidden min-w-0 text-right md:block">
+            <p className="truncate text-[13px] font-medium">
+              {selectedDevice
+                ? selectedDevice.employeeName || selectedDevice.deviceName
+                : "ประวัติเส้นทาง"}
+            </p>
+            <p className="text-[11px] tabular-nums text-muted-foreground">
+              {locations.length > 0
+                ? `${locations.length} จุด · หยุด ${stops.length} แห่ง · ครอบคลุม ${coverage ? formatCoverageArea(coverage.areaSqMeters) : "—"} · ${date}`
+                : deviceId
+                  ? pointCountForDate
+                    ? `มี ${pointCountForDate} จุดในฐานข้อมูล · กดโหลด`
+                    : "ยังไม่มีจุดในวันที่นี้"
+                  : "เลือกพนักงานเพื่อดูเส้นทาง"}
+            </p>
+          </div>
         </div>
-        <div className="w-[calc(50%-0.375rem)] min-w-0 sm:w-[170px]">
-          <p className="mb-1 text-[11px] text-muted-foreground">วันที่</p>
-          <DatePickerWithMarkers
-            value={date}
-            onChange={setDate}
-            datesWithData={datesWithData}
-            disabled={!deviceId}
-          />
-        </div>
-        <Button
-          onClick={fetchHistory}
-          disabled={!deviceId || loading}
-          className="h-9 flex-1 sm:h-8 sm:flex-none"
-        >
-          {loading ? "กำลังโหลด..." : "โหลด"}
-        </Button>
-        <div className="ml-auto hidden min-w-0 text-right md:block">
-          <p className="truncate text-[13px] font-medium">
-            {selectedDevice
-              ? selectedDevice.employeeName || selectedDevice.deviceName
-              : "ประวัติเส้นทาง"}
+        {locations.length > 0 && (
+          <p className="mt-2 text-[11px] tabular-nums text-muted-foreground md:hidden">
+            {locations.length} จุด · หยุด {stops.length} ·{" "}
+            {coverage ? formatCoverageArea(coverage.areaSqMeters) : "—"}
           </p>
-          <p className="text-[11px] tabular-nums text-muted-foreground">
-            {locations.length > 0
-              ? `${locations.length} จุด · หยุด ${stops.length} แห่ง · ครอบคลุม ${coverage ? formatCoverageArea(coverage.areaSqMeters) : "—"} · ${date}`
-              : deviceId
-                ? pointCountForDate
-                  ? `มี ${pointCountForDate} จุดในฐานข้อมูล · กดโหลด`
-                  : "ยังไม่มีจุดในวันที่นี้"
-                : "เลือกพนักงานเพื่อดูเส้นทาง"}
-          </p>
-        </div>
+        )}
       </header>
 
-      <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-3 sm:p-5 lg:flex-row lg:items-start lg:overflow-hidden">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 lg:overflow-hidden">
-          <div className="relative h-[42vh] min-h-[240px] shrink-0 overflow-hidden rounded-lg border bg-background sm:h-[min(50vh,480px)] lg:h-[min(58vh,560px)] lg:min-h-[320px]">
+      <div className="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain p-2 sm:gap-3 sm:p-5 lg:flex-row lg:items-start lg:overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 sm:gap-3 lg:overflow-hidden">
+          <div className="relative h-[min(52vh,420px)] min-h-[280px] shrink-0 overflow-hidden rounded-lg border bg-background sm:h-[min(50vh,480px)] lg:h-[min(58vh,560px)] lg:min-h-[320px]">
             <HistoryMap
               locations={locations}
               highlightIndex={sliderIndex}
@@ -217,14 +227,13 @@ export default function HistoryClient() {
             />
 
             {locations.length > 0 && coverage && (
-              <div className="absolute bottom-3 left-3 z-[1000] flex flex-wrap items-center gap-2">
-                <div className="rounded-md border bg-background/95 px-2.5 py-1.5 text-[11px] shadow-sm">
+              <div className="absolute bottom-2 left-2 z-[1000] flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-1.5 sm:bottom-3 sm:left-3 sm:gap-2">
+                <div className="rounded-md border bg-background/95 px-2 py-1 text-[10px] shadow-sm sm:px-2.5 sm:py-1.5 sm:text-[11px]">
                   <span className="inline-block size-2 rounded-sm bg-[#0d9488]/40 align-middle" />{" "}
-                  ครอบคลุม{" "}
                   <span className="font-medium tabular-nums text-foreground">
                     {formatCoverageArea(coverage.areaSqMeters)}
                   </span>
-                  <span className="text-muted-foreground">
+                  <span className="hidden text-muted-foreground sm:inline">
                     {" "}
                     (รัศมี {coverage.bufferMeters} ม.)
                   </span>
@@ -232,9 +241,9 @@ export default function HistoryClient() {
                 <button
                   type="button"
                   onClick={() => setShowCoverage((v) => !v)}
-                  className="rounded-md border bg-background/95 px-2.5 py-1.5 text-[11px] shadow-sm transition-colors hover:bg-muted/60"
+                  className="rounded-md border bg-background/95 px-2 py-1 text-[10px] shadow-sm transition-colors hover:bg-muted/60 sm:px-2.5 sm:py-1.5 sm:text-[11px]"
                 >
-                  {showCoverage ? "ซ่อนพื้นที่" : "แสดงพื้นที่"}
+                  {showCoverage ? "ซ่อน" : "พื้นที่"}
                 </button>
               </div>
             )}
@@ -259,11 +268,11 @@ export default function HistoryClient() {
             )}
           </div>
 
-          <div className="shrink-0 rounded-lg border bg-background px-4 py-3">
+          <div className="shrink-0 rounded-lg border bg-background px-3 py-2.5 sm:px-4 sm:py-3">
             {locations.length > 0 && currentPoint ? (
               <>
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[13px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground sm:text-[13px]">
                     จุดที่{" "}
                     <span className="font-medium tabular-nums text-foreground">
                       {sliderIndex + 1}
@@ -275,7 +284,7 @@ export default function HistoryClient() {
                       </span>
                     )}
                   </p>
-                  <p className="text-[13px] tabular-nums text-muted-foreground">
+                  <p className="text-[11px] tabular-nums text-muted-foreground sm:text-[13px]">
                     {formatDateTime(currentPoint.recordedAt)}
                   </p>
                 </div>
@@ -290,29 +299,33 @@ export default function HistoryClient() {
                     setSliderIndex(Array.isArray(v) ? (v[0] ?? 0) : v);
                   }}
                 />
-                <dl className="mt-3 grid grid-cols-3 gap-3 sm:gap-4">
+                <dl className="mt-2.5 grid grid-cols-3 gap-2 sm:mt-3 sm:gap-4">
                   <div>
-                    <dt className="text-[11px] text-muted-foreground">Lat</dt>
-                    <dd className="mt-0.5 text-[12px] tabular-nums sm:text-[13px]">
+                    <dt className="text-[10px] text-muted-foreground sm:text-[11px]">
+                      Lat
+                    </dt>
+                    <dd className="mt-0.5 text-[11px] tabular-nums sm:text-[13px]">
                       {currentPoint.latitude.toFixed(5)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[11px] text-muted-foreground">Lng</dt>
-                    <dd className="mt-0.5 text-[12px] tabular-nums sm:text-[13px]">
+                    <dt className="text-[10px] text-muted-foreground sm:text-[11px]">
+                      Lng
+                    </dt>
+                    <dd className="mt-0.5 text-[11px] tabular-nums sm:text-[13px]">
                       {currentPoint.longitude.toFixed(5)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[11px] text-muted-foreground">
+                    <dt className="text-[10px] text-muted-foreground sm:text-[11px]">
                       ความเร็ว
                     </dt>
-                    <dd className="mt-0.5 text-[12px] tabular-nums sm:text-[13px]">
+                    <dd className="mt-0.5 text-[11px] tabular-nums sm:text-[13px]">
                       {speedKmh ? `${speedKmh} km/h` : "—"}
                     </dd>
                   </div>
                 </dl>
-                <div className="mt-3 flex flex-wrap gap-3">
+                <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 sm:mt-3 sm:gap-3">
                   <a
                     href={googleMapsViewUrl(
                       currentPoint.latitude,
@@ -322,7 +335,7 @@ export default function HistoryClient() {
                     rel="noopener noreferrer"
                     className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
                   >
-                    เปิดพิกัด →
+                    เปิดพิกัด
                   </a>
                   <a
                     href={googleMapsNavUrl(
@@ -333,12 +346,12 @@ export default function HistoryClient() {
                     rel="noopener noreferrer"
                     className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
                   >
-                    นำทาง →
+                    นำทาง
                   </a>
                 </div>
               </>
             ) : (
-              <p className="py-6 text-center text-[12px] text-muted-foreground">
+              <p className="py-4 text-center text-[12px] text-muted-foreground sm:py-6">
                 {deviceId
                   ? loading
                     ? "กำลังโหลดจุด..."
@@ -350,14 +363,40 @@ export default function HistoryClient() {
         </div>
 
         {deviceId ? (
-          <aside className="flex max-h-[40vh] w-full shrink-0 flex-col overflow-hidden rounded-lg border bg-background lg:h-[min(58vh,560px)] lg:max-h-none lg:min-h-[320px] lg:w-[280px] lg:self-start">
-            <div className="shrink-0 border-b px-4 py-3">
-              <p className="text-[13px] font-medium">จุดที่หยุด</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                อยู่ในรัศมี 60 ม. ≥ 5 นาที
-              </p>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto">
+          <aside
+            className={cn(
+              "flex w-full shrink-0 flex-col overflow-hidden rounded-lg border bg-background lg:h-[min(58vh,560px)] lg:max-h-none lg:min-h-[320px] lg:w-[280px] lg:self-start",
+              stopsOpen ? "max-h-[50vh]" : "max-h-none lg:max-h-none"
+            )}
+          >
+            <button
+              type="button"
+              className="flex shrink-0 items-center justify-between border-b px-3 py-2.5 text-left sm:px-4 sm:py-3 lg:pointer-events-none"
+              onClick={() => setStopsOpen((v) => !v)}
+            >
+              <div>
+                <p className="text-[13px] font-medium">
+                  จุดที่หยุด
+                  {stops.length > 0 ? (
+                    <span className="ml-1.5 tabular-nums text-muted-foreground">
+                      ({stops.length})
+                    </span>
+                  ) : null}
+                </p>
+                <p className="mt-0.5 hidden text-[11px] text-muted-foreground sm:block">
+                  อยู่ในรัศมี 60 ม. ≥ 5 นาที
+                </p>
+              </div>
+              <span className="text-[11px] text-muted-foreground lg:hidden">
+                {stopsOpen ? "ซ่อน" : "ดูรายการ"}
+              </span>
+            </button>
+            <div
+              className={cn(
+                "min-h-0 flex-1 overflow-y-auto",
+                !stopsOpen && "hidden lg:block"
+              )}
+            >
               {loading ? (
                 <p className="px-4 py-8 text-[12px] text-muted-foreground">
                   กำลังโหลด...
@@ -378,7 +417,7 @@ export default function HistoryClient() {
                       <li key={stop.id}>
                         <div
                           className={cn(
-                            "border-b px-4 py-3 transition-colors",
+                            "border-b px-3 py-2.5 transition-colors sm:px-4 sm:py-3",
                             active && "bg-muted/60"
                           )}
                         >

@@ -88,19 +88,19 @@ function SpeedColoredRoute({ locations }: { locations: HistoryLocation[] }) {
 
 function SpeedLegend() {
   return (
-    <div className="rounded-md border bg-background/95 px-2.5 py-2 shadow-sm">
-      <p className="mb-1.5 text-[10px] font-medium text-muted-foreground">
+    <div className="rounded-md border bg-background/95 px-2 py-1.5 shadow-sm sm:px-2.5 sm:py-2">
+      <p className="mb-1 hidden text-[10px] font-medium text-muted-foreground sm:mb-1.5 sm:block">
         ความเร็ว (km/h)
       </p>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-1 sm:flex-col sm:items-start sm:gap-1">
         {SPEED_LEGEND.map((item) => (
-          <div key={item.label} className="flex items-center gap-1.5">
+          <div key={item.label} className="flex items-center gap-1 sm:gap-1.5">
             <span
-              className="size-2.5 shrink-0 rounded-full"
+              className="size-2 shrink-0 rounded-full sm:size-2.5"
               style={{ backgroundColor: item.color }}
               aria-hidden
             />
-            <span className="text-[10px] tabular-nums text-foreground">
+            <span className="text-[9px] tabular-nums text-foreground sm:text-[10px]">
               {item.label}
             </span>
           </div>
@@ -343,8 +343,11 @@ function HighlightMarker({
   useEffect(() => {
     const marker = markerRef.current;
     if (!marker) return;
-    if (autoOpen) marker.openPopup();
-    else marker.closePopup();
+    // On narrow screens, keep the map visible — open popup only when tapped.
+    const isNarrow =
+      typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches;
+    if (autoOpen && !isNarrow) marker.openPopup();
+    else if (!autoOpen) marker.closePopup();
   }, [point.id, index, autoOpen]);
 
   return (
@@ -553,7 +556,7 @@ export function HistoryMap({
       </MapContainer>
 
       {locations.length > 1 && (
-        <div className="pointer-events-none absolute right-3 top-3 z-[1000]">
+        <div className="pointer-events-none absolute right-2 top-2 z-[1000] max-w-[min(100%-1rem,220px)] sm:right-3 sm:top-3">
           <SpeedLegend />
         </div>
       )}

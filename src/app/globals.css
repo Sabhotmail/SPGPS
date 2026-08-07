@@ -138,9 +138,45 @@
 }
 
 .spgps-popup {
-  min-width: min(220px, calc(100vw - 48px));
-  max-width: min(280px, calc(100vw - 32px));
-  padding: 14px 16px 14px;
+  min-width: min(200px, calc(100vw - 56px));
+  max-width: min(260px, calc(100vw - 40px));
+  padding: 12px 14px;
+}
+
+@media (max-width: 640px) {
+  .spgps-popup {
+    min-width: min(180px, calc(100vw - 48px));
+    max-width: min(220px, calc(100vw - 36px));
+    padding: 10px 12px;
+  }
+
+  .spgps-popup-title {
+    @apply text-[12px];
+  }
+
+  .spgps-popup-meta {
+    @apply mt-2 space-y-1 pt-2;
+  }
+
+  .spgps-popup-meta > div {
+    @apply grid-cols-[52px_1fr] gap-1.5 text-[10px];
+  }
+
+  .spgps-popup-actions {
+    @apply mt-2 flex-wrap gap-x-3 gap-y-1.5 pt-2;
+  }
+
+  .spgps-popup-actions a {
+    @apply text-[11px];
+  }
+
+  .leaflet-container .leaflet-popup-content-wrapper {
+    @apply rounded-lg;
+  }
+
+  .leaflet-container .leaflet-popup-content {
+    margin: 0 !important;
+  }
 }
 
 .spgps-popup-head {
