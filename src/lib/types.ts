@@ -77,7 +77,13 @@ export function formatConnectionStatus(
   return status;
 }
 
-/** Google Maps navigation to a lat/lng destination. */
+/** Open Google Maps centered on a lat/lng pin. */
+export function googleMapsViewUrl(latitude: number, longitude: number): string {
+  const q = `${latitude},${longitude}`;
+  return `https://www.google.com/maps?q=${encodeURIComponent(q)}`;
+}
+
+/** Google Maps directions to a lat/lng destination. */
 export function googleMapsNavUrl(latitude: number, longitude: number): string {
   const dest = `${latitude},${longitude}`;
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;

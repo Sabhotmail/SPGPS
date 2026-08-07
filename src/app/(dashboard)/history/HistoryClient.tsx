@@ -11,6 +11,7 @@ import {
   formatDateTime,
   formatDurationMinutes,
   googleMapsNavUrl,
+  googleMapsViewUrl,
 } from "@/lib/types";
 import { todayYmdInAppTz } from "@/lib/app-timezone";
 import {
@@ -311,17 +312,30 @@ export default function HistoryClient() {
                     </dd>
                   </div>
                 </dl>
-                <a
-                  href={googleMapsNavUrl(
-                    currentPoint.latitude,
-                    currentPoint.longitude
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-block text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
-                >
-                  นำทางด้วย Google Maps →
-                </a>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <a
+                    href={googleMapsViewUrl(
+                      currentPoint.latitude,
+                      currentPoint.longitude
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
+                  >
+                    เปิดพิกัด →
+                  </a>
+                  <a
+                    href={googleMapsNavUrl(
+                      currentPoint.latitude,
+                      currentPoint.longitude
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
+                  >
+                    นำทาง →
+                  </a>
+                </div>
               </>
             ) : (
               <p className="py-6 text-center text-[12px] text-muted-foreground">
@@ -397,18 +411,32 @@ export default function HistoryClient() {
                               </div>
                             </div>
                           </button>
-                          <a
-                            href={googleMapsNavUrl(
-                              stop.latitude,
-                              stop.longitude
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 ml-7 inline-block text-[11px] font-medium text-foreground underline-offset-2 hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            นำทาง Google Maps
-                          </a>
+                          <div className="mt-2 ml-7 flex flex-wrap gap-3">
+                            <a
+                              href={googleMapsViewUrl(
+                                stop.latitude,
+                                stop.longitude
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-medium text-foreground underline-offset-2 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              เปิดพิกัด
+                            </a>
+                            <a
+                              href={googleMapsNavUrl(
+                                stop.latitude,
+                                stop.longitude
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-medium text-foreground underline-offset-2 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              นำทาง
+                            </a>
+                          </div>
                         </div>
                       </li>
                     );

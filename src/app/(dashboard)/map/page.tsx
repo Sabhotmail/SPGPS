@@ -10,6 +10,7 @@ import {
   formatDateTime,
   getDeviceStatus,
   googleMapsNavUrl,
+  googleMapsViewUrl,
 } from "@/lib/types";
 import { StatusDot } from "@/components/ui/status-dot";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -230,17 +231,30 @@ function DeviceListPanel({
           </div>
           <div className="mt-2 flex flex-wrap gap-3">
             {selectedDevice.latestLocation && (
-              <a
-                href={googleMapsNavUrl(
-                  selectedDevice.latestLocation.latitude,
-                  selectedDevice.latestLocation.longitude
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
-              >
-                นำทาง Google Maps
-              </a>
+              <>
+                <a
+                  href={googleMapsViewUrl(
+                    selectedDevice.latestLocation.latitude,
+                    selectedDevice.latestLocation.longitude
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  เปิดพิกัด
+                </a>
+                <a
+                  href={googleMapsNavUrl(
+                    selectedDevice.latestLocation.latitude,
+                    selectedDevice.latestLocation.longitude
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  นำทาง
+                </a>
+              </>
             )}
             <Link
               href={`/history?deviceId=${selectedDevice.id}`}

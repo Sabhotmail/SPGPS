@@ -11,6 +11,7 @@ import {
   formatDateTime,
   getDeviceStatus,
   googleMapsNavUrl,
+  googleMapsViewUrl,
   statusColor,
 } from "@/lib/types";
 import { StatusDot } from "@/components/ui/status-dot";
@@ -210,11 +211,18 @@ function DeviceMarker({
 
           <div className="spgps-popup-actions">
             <a
+              href={googleMapsViewUrl(loc.latitude, loc.longitude)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              เปิดพิกัด
+            </a>
+            <a
               href={googleMapsNavUrl(loc.latitude, loc.longitude)}
               target="_blank"
               rel="noopener noreferrer"
             >
-              นำทาง Google Maps
+              นำทาง
             </a>
             <Link href={`/history?deviceId=${device.id}`}>ดูประวัติ</Link>
           </div>

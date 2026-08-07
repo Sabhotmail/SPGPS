@@ -16,6 +16,7 @@ import {
   formatDateTime,
   formatDurationMinutes,
   googleMapsNavUrl,
+  googleMapsViewUrl,
 } from "@/lib/types";
 import type { CoverageResult } from "@/lib/coverage-area";
 import { coverageToDisplayGeoJson } from "@/lib/coverage-area";
@@ -143,24 +144,32 @@ function stopIcon(index: number, active: boolean) {
   });
 }
 
-function MapsNavLink({
+function MapsLinks({
   latitude,
   longitude,
-  label = "นำทาง Google Maps",
 }: {
   latitude: number;
   longitude: number;
-  label?: string;
 }) {
   return (
-    <a
-      href={googleMapsNavUrl(latitude, longitude)}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {label}
-    </a>
+    <>
+      <a
+        href={googleMapsViewUrl(latitude, longitude)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+      >
+        เปิดพิกัด
+      </a>
+      <a
+        href={googleMapsNavUrl(latitude, longitude)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+      >
+        นำทาง
+      </a>
+    </>
   );
 }
 
@@ -306,7 +315,7 @@ function StopMarker({
             </div>
           </dl>
           <div className="spgps-popup-actions">
-            <MapsNavLink latitude={stop.latitude} longitude={stop.longitude} />
+            <MapsLinks latitude={stop.latitude} longitude={stop.longitude} />
           </div>
         </div>
       </Popup>
@@ -378,7 +387,7 @@ function HighlightMarker({
             </div>
           </dl>
           <div className="spgps-popup-actions">
-            <MapsNavLink
+            <MapsLinks
               latitude={point.latitude}
               longitude={point.longitude}
             />
@@ -484,7 +493,7 @@ export function HistoryMap({
                   </p>
                 </div>
                 <div className="spgps-popup-actions">
-                  <MapsNavLink
+                  <MapsLinks
                     latitude={startPoint.latitude}
                     longitude={startPoint.longitude}
                   />
@@ -522,7 +531,7 @@ export function HistoryMap({
                   </div>
                 </dl>
                 <div className="spgps-popup-actions">
-                  <MapsNavLink
+                  <MapsLinks
                     latitude={endPoint.latitude}
                     longitude={endPoint.longitude}
                   />
