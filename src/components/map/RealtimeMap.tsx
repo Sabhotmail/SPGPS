@@ -15,6 +15,7 @@ import {
   statusColor,
 } from "@/lib/types";
 import { StatusDot } from "@/components/ui/status-dot";
+import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
 import "leaflet/dist/leaflet.css";
 
 function createIcon(color: string, active: boolean) {
@@ -255,10 +256,7 @@ export function RealtimeMap({
         scrollWheelZoom
         zoomControl={false}
       >
-        <TileLayer
-          attribution="&copy; OpenStreetMap"
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        />
+        <TileLayer attribution={MAP_TILE_ATTRIBUTION} url={MAP_TILE_URL} />
         <FitBounds devices={devices} />
         <InvalidateSize />
         <FocusSelected selectedDeviceId={selectedDeviceId} devices={devices} />

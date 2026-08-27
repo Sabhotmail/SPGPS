@@ -24,6 +24,7 @@ import {
   SPEED_LEGEND,
   buildSpeedSegments,
 } from "@/lib/route-speed";
+import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
 import "leaflet/dist/leaflet.css";
 
 const COVERAGE_STYLE: L.PathOptions = {
@@ -454,10 +455,7 @@ export function HistoryMap({
         scrollWheelZoom
         zoomControl={false}
       >
-        <TileLayer
-          attribution="&copy; OpenStreetMap"
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        />
+        <TileLayer attribution={MAP_TILE_ATTRIBUTION} url={MAP_TILE_URL} />
         <InvalidateSize layoutKey={sizeKey} />
         {locations.length > 0 && (
           <FitRoute locations={locations} layoutKey={sizeKey} />
