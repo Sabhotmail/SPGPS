@@ -17,11 +17,11 @@ function Get-Pm2Command {
 }
 
 function Invoke-Pm2 {
-    param([string[]]$Args)
+    param([string[]]$Pm2Args)
     $pm2 = Get-Pm2Command
-    & $pm2 @Args
+    & $pm2 @Pm2Args
     if ($LASTEXITCODE -ne 0) {
-        throw "pm2 failed: pm2 $($Args -join ' ')"
+        throw "pm2 failed: pm2 $($Pm2Args -join ' ')"
     }
 }
 

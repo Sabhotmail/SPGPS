@@ -20,10 +20,10 @@ function Get-Pm2Command {
 }
 
 function Invoke-Pm2 {
-    param([string[]]$Args)
-    & (Get-Pm2Command) @Args
+    param([string[]]$Pm2Args)
+    & (Get-Pm2Command) @Pm2Args
     if ($LASTEXITCODE -ne 0) {
-        throw "pm2 failed: pm2 $($Args -join ' ')"
+        throw "pm2 failed: pm2 $($Pm2Args -join ' ')"
     }
 }
 
@@ -62,13 +62,13 @@ Write-Host "Stopping old PM2 apps (if any) ..."
 Remove-Pm2AppsIfExist -Names @("spgps-web", "spgps-worker")
 
 Write-Host "Starting apps from ecosystem.config.cjs ..."
-Invoke-Pm2 @("start", "ecosystem.config.cjs")
+Invoke-Pm2 -Pm2Args @("start", "ecosystem.config.cjs")
 
 Write-Host "Saving PM2 process list ..."
-Invoke-Pm2 @("save")
+Invoke-Pm2 -Pm2Args @("save")
 
 Write-Host ""
-Invoke-Pm2 @("status")
+Invoke-Pm2 -Pm2Args @("status")
 Write-Host ""
 $port = 3000
 $envFile = Join-Path $AppRoot ".env"
