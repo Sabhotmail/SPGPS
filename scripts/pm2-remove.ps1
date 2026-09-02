@@ -2,6 +2,12 @@
 
 $ErrorActionPreference = "Stop"
 
+function Get-Pm2Command {
+    $cmd = Get-Command pm2.cmd -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    return "pm2"
+}
+
 function Remove-Pm2AppsIfExist {
     param([string[]]$Names)
 
@@ -9,7 +15,7 @@ function Remove-Pm2AppsIfExist {
     $ErrorActionPreference = "SilentlyContinue"
     try {
         foreach ($name in $Names) {
-            & pm2 delete $name 2>&1 | Out-Null
+            & (Get-Pm2Command) delete $name 2>&1 | Out-Null
         }
     } finally {
         $ErrorActionPreference = $previous
@@ -23,5 +29,5 @@ if (-not (Get-Command pm2 -ErrorAction SilentlyContinue)) {
 
 Write-Host "Stopping SPGPS PM2 apps ..."
 Remove-Pm2AppsIfExist -Names @("spgps-web", "spgps-worker")
-pm2 save --force
+& (Get-Pm2Command) save --force
 Write-Host "Done."

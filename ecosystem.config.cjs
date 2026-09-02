@@ -18,43 +18,42 @@ function readPortFromEnvFile() {
 
 const port = readPortFromEnvFile();
 
+const shared = {
+  exec_mode: "fork",
+  windowsHide: true,
+  vizion: false,
+  merge_logs: true,
+  log_date_format: "YYYY-MM-DD HH:mm:ss",
+  autorestart: true,
+  max_restarts: 10,
+  restart_delay: 5000,
+  watch: false,
+  env: {
+    NODE_ENV: "production",
+  },
+};
+
 /** @type {import('pm2').StartOptions[]} */
 const apps = [
   {
+    ...shared,
     name: "spgps-web",
     cwd: root,
     script: path.join(root, "node_modules/next/dist/bin/next"),
     args: `start -H 0.0.0.0 -p ${port}`,
     interpreter: "node",
-    env: {
-      NODE_ENV: "production",
-    },
     error_file: path.join(root, "logs/web.err.log"),
     out_file: path.join(root, "logs/web.out.log"),
-    merge_logs: true,
-    log_date_format: "YYYY-MM-DD HH:mm:ss",
-    autorestart: true,
-    max_restarts: 10,
-    restart_delay: 5000,
-    watch: false,
   },
   {
+    ...shared,
     name: "spgps-worker",
     cwd: root,
     script: path.join(root, "node_modules/tsx/dist/cli.mjs"),
     args: "--env-file=.env worker/poll-locations.ts",
     interpreter: "node",
-    env: {
-      NODE_ENV: "production",
-    },
     error_file: path.join(root, "logs/worker.err.log"),
     out_file: path.join(root, "logs/worker.out.log"),
-    merge_logs: true,
-    log_date_format: "YYYY-MM-DD HH:mm:ss",
-    autorestart: true,
-    max_restarts: 10,
-    restart_delay: 5000,
-    watch: false,
   },
 ];
 

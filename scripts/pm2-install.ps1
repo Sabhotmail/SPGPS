@@ -13,6 +13,20 @@ function Require-Command($Name) {
     }
 }
 
+function Get-Pm2Command {
+    $cmd = Get-Command pm2.cmd -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    return "pm2"
+}
+
+function Invoke-Pm2 {
+    param([string[]]$Args)
+    & (Get-Pm2Command) @Args
+    if ($LASTEXITCODE -ne 0) {
+        throw "pm2 failed: pm2 $($Args -join ' ')"
+    }
+}
+
 function Remove-Pm2AppsIfExist {
     param([string[]]$Names)
 
@@ -20,7 +34,7 @@ function Remove-Pm2AppsIfExist {
     $ErrorActionPreference = "SilentlyContinue"
     try {
         foreach ($name in $Names) {
-            & pm2 delete $name 2>&1 | Out-Null
+            & (Get-Pm2Command) delete $name 2>&1 | Out-Null
         }
     } finally {
         $ErrorActionPreference = $previous
@@ -48,13 +62,13 @@ Write-Host "Stopping old PM2 apps (if any) ..."
 Remove-Pm2AppsIfExist -Names @("spgps-web", "spgps-worker")
 
 Write-Host "Starting apps from ecosystem.config.cjs ..."
-pm2 start ecosystem.config.cjs
+Invoke-Pm2 @("start", "ecosystem.config.cjs")
 
 Write-Host "Saving PM2 process list ..."
-pm2 save
+Invoke-Pm2 @("save")
 
 Write-Host ""
-pm2 status
+Invoke-Pm2 @("status")
 Write-Host ""
 $port = 3000
 $envFile = Join-Path $AppRoot ".env"
@@ -76,3 +90,7 @@ Write-Host "  pm2 restart spgps-worker"
 Write-Host "  pm2 restart all"
 Write-Host ""
 Write-Host "Auto-start on boot (Windows): see README section Windows - PM2"
+Write-Host ""
+Write-Host "If a black node.exe window stays open, install PM2 as a Windows service (Admin):"
+Write-Host "  .\scripts\pm2-service-install.ps1"
+Write-Host "  .\scripts\pm2-install.ps1"

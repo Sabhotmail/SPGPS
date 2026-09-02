@@ -175,6 +175,18 @@ pm2 restart spgps-worker
 .\scripts\pm2-remove.ps1
 ```
 
+#### หน้าต่างดำ node.exe (Windows)
+
+บน Windows ถ้ารัน PM2 จาก PowerShell อาจมีหน้าต่างดำ `node.exe` ค้างอยู่ (PM2 daemon) — **อย่าปิดหน้าต่างนั้น** เพราะจะหยุดทุก process
+
+วิธีแก้ถาวร: ติดตั้ง PM2 เป็น Windows Service (PowerShell as Administrator):
+
+```powershell
+cd C:\NextJSTest\SPGPS
+.\scripts\pm2-service-install.ps1
+.\scripts\pm2-install.ps1
+```
+
 #### ให้ PM2 รันอัตโนมัติหลัง reboot (Windows)
 
 ```powershell
