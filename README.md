@@ -175,6 +175,24 @@ pm2 restart spgps-worker
 .\scripts\pm2-remove.ps1
 ```
 
+#### เปลี่ยน PORT ใน `.env`
+
+`pm2 restart` ไม่อ่านพอร์ตใหม่ — ต้อง start web ใหม่และเปิด firewall:
+
+```powershell
+cd C:\NextJSTest\SPGPS
+# แก้ PORT ใน .env ก่อน
+
+pm2 delete spgps-web
+pm2 start ecosystem.config.cjs --only spgps-web
+pm2 save
+
+# เปิด Windows Firewall (PowerShell as Administrator)
+.\scripts\pm2-firewall.ps1
+```
+
+ถ้ารัน `.\scripts\pm2-install.ps1` แบบ Administrator จะเปิด firewall ให้อัตโนมัติตาม `PORT` ใน `.env`
+
 #### หน้าต่างดำ node.exe (Windows)
 
 บน Windows ถ้ารัน PM2 จาก PowerShell อาจมีหน้าต่างดำ `node.exe` ค้างอยู่ (PM2 daemon) — **อย่าปิดหน้าต่างนั้น** เพราะจะหยุดทุก process
@@ -227,10 +245,10 @@ pm2 status
 curl http://localhost:3003
 ```
 
-Firewall (ตัวอย่างพอร์ต 3003):
+Firewall (PowerShell as Administrator):
 
-```cmd
-netsh advfirewall firewall add rule name="SPGPS Web 3003" dir=in action=allow protocol=TCP localport=3003
+```powershell
+.\scripts\pm2-firewall.ps1
 ```
 
 ### Windows — NSSM (legacy)

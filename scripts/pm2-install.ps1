@@ -41,6 +41,42 @@ function Remove-Pm2AppsIfExist {
     }
 }
 
+function Test-IsAdministrator {
+    $principal = New-Object Security.Principal.WindowsPrincipal(
+        [Security.Principal.WindowsIdentity]::GetCurrent()
+    )
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Get-PortFromEnvFile {
+    param([string]$Path)
+
+    $port = 3000
+    if (-not (Test-Path $Path)) { return $port }
+
+    foreach ($line in Get-Content $Path) {
+        if ($line -match '^\s*PORT\s*=\s*(\d+)\s*$') {
+            return [int]$Matches[1]
+        }
+    }
+
+    return $port
+}
+
+function Ensure-FirewallRule {
+    param(
+        [int]$Port,
+        [string]$RuleName
+    )
+
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    netsh advfirewall firewall delete rule name="$RuleName" | Out-Null
+    $ErrorActionPreference = $previous
+
+    netsh advfirewall firewall add rule name="$RuleName" dir=in action=allow protocol=TCP localport=$Port | Out-Null
+}
+
 Write-Host "=== SPGPS PM2 install ==="
 Write-Host "AppRoot: $AppRoot"
 Write-Host ""
@@ -70,17 +106,19 @@ Invoke-Pm2 -Pm2Args @("save")
 Write-Host ""
 Invoke-Pm2 -Pm2Args @("status")
 Write-Host ""
-$port = 3000
-$envFile = Join-Path $AppRoot ".env"
-if (Test-Path $envFile) {
-    foreach ($line in Get-Content $envFile) {
-        if ($line -match '^\s*PORT\s*=\s*(\d+)\s*$') {
-            $port = $Matches[1]
-            break
-        }
-    }
-}
+$port = Get-PortFromEnvFile -Path (Join-Path $AppRoot ".env")
 Write-Host "Web: http://localhost:$port"
+Write-Host ""
+
+if (Test-IsAdministrator) {
+    Write-Host "Opening Windows Firewall for port $port ..."
+    Ensure-FirewallRule -Port $port -RuleName "SPGPS Web $port"
+    Write-Host "Firewall rule added."
+} else {
+    Write-Host "Firewall: run as Administrator to open port $port:"
+    Write-Host "  .\scripts\pm2-firewall.ps1"
+}
+
 Write-Host ""
 Write-Host "Useful commands:"
 Write-Host "  pm2 status"
