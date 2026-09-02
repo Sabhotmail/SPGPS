@@ -59,7 +59,4 @@ Ensure-FirewallRule -Port $port -RuleName $ruleName
 Write-Host "Done. Test from this machine:"
 Write-Host "  curl http://localhost:$port"
 Write-Host ""
-Write-Host "If you changed PORT, also restart web with:"
-Write-Host "  pm2 delete spgps-web"
-Write-Host "  pm2 start ecosystem.config.cjs --only spgps-web"
-Write-Host "  pm2 save"
+Write-Host "If you changed PORT in .env, re-run nssm-install.ps1 as Administrator."

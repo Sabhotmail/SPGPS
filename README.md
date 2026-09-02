@@ -122,15 +122,95 @@ http://100.106.34.125:3000
 มี `AUTH_TRUST_HOST=true` และ**อย่าตั้ง** `AUTH_URL`/`NEXTAUTH_URL` เป็น localhost — ไม่เช่นนั้น login จะเด้งกลับ localhost  
 ถ้า Windows Firewall ถาม ให้ Allow พอร์ตที่ตั้งใน `PORT` สำหรับ Node
 
-รัน worker แยก (PM2 แนะนำบน Windows, หรือ systemd บน Linux):
+รัน worker แยก (NSSM แนะนำบน Windows, หรือ systemd บน Linux):
 
 ```bash
 npm run worker:poll
 ```
 
-### Windows — PM2 (Production)
+### Windows — NSSM (Production)
 
-ติดตั้ง PM2 ครั้งแรก (ครั้งเดียว):
+เตรียมโปรเจกต์บน server:
+
+```powershell
+cd C:\NextJSTest\SPGPS
+git pull
+pm2 stop all 2>$null
+npm ci
+npx prisma generate
+npx prisma migrate deploy
+npm run build
+```
+
+ตั้งค่า `PORT` และตัวแปรอื่นใน `.env` แล้วติดตั้ง services (**PowerShell as Administrator**):
+
+```powershell
+cd C:\NextJSTest\SPGPS
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\nssm-install.ps1
+```
+
+สคริปต์จะสร้าง 2 Windows services (รันอัตโนมัติหลัง reboot):
+- **SPGPS Web** — Next.js (`next start -H 0.0.0.0`)
+- **SPGPS Worker** — GPS poll worker (`scripts/run-worker.cjs`)
+
+อ่าน `PORT` จาก `.env` และเปิด Windows Firewall ให้อัตโนมัติ
+
+คำสั่งที่ใช้บ่อย:
+
+```cmd
+nssm status "SPGPS Web"
+nssm status "SPGPS Worker"
+nssm restart "SPGPS Web"
+nssm restart "SPGPS Worker"
+type C:\NextJSTest\SPGPS\logs\web.err.log
+```
+
+ลบ services:
+
+```powershell
+.\scripts\nssm-remove.ps1
+```
+
+#### เปลี่ยน PORT ใน `.env`
+
+แก้ `.env` แล้วรันสคริปต์ติดตั้งใหม่ (Administrator):
+
+```powershell
+.\scripts\nssm-install.ps1
+```
+
+#### ย้ายจาก PM2 กลับมา NSSM
+
+```powershell
+cd C:\NextJSTest\SPGPS
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\migrate-pm2-to-nssm.ps1
+```
+
+หรือทีละขั้น:
+
+```powershell
+.\scripts\pm2-uninstall.ps1
+.\scripts\nssm-install.ps1
+```
+
+หลัง deploy ใหม่:
+
+```powershell
+pm2 stop all 2>$null
+npm ci
+npx prisma migrate deploy
+npm run build
+nssm restart "SPGPS Web"
+nssm restart "SPGPS Worker"
+```
+
+**สำคัญ:** ชื่อ service มีช่องว่าง — ใส่ quote เสมอ (`"SPGPS Web"`). รัน `nssm` ทีละคำสั่ง อย่าต่อเป็นบรรทัดเดียว. ถ้า error `marked for deletion` ให้ปิด `services.msc` รอ 30 วินาที หรือ reboot แล้วรัน `nssm-install.ps1` อีกครั้ง.
+
+### Windows — PM2 (ทางเลือก)
+
+ยังมีสคริปต์ PM2 ไว้ใช้ได้ แต่แนะนำ NSSM บน Windows production
 
 ```powershell
 npm install -g pm2

@@ -1,4 +1,4 @@
-# SPGPS — ลบ NSSM services (รัน PowerShell as Administrator)
+# SPGPS - Remove NSSM services (run PowerShell as Administrator)
 
 $NssmExe = "nssm"
 $WebService = "SPGPS Web"
