@@ -13,7 +13,12 @@
     "db:seed": "tsx prisma/seed.ts",
     "worker:poll": "tsx --env-file=.env worker/poll-locations.ts",
     "worker:sync": "tsx --env-file=.env worker/sync-devices.ts",
-    "worker:backfill": "tsx --env-file=.env worker/backfill-locations.ts"
+    "worker:backfill": "tsx --env-file=.env worker/backfill-locations.ts",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop spgps-web spgps-worker",
+    "pm2:restart": "pm2 restart spgps-web spgps-worker",
+    "pm2:logs": "pm2 logs",
+    "pm2:status": "pm2 status"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

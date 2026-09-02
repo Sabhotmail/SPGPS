@@ -99,9 +99,9 @@ npm run build
 npm start
 ```
 
-`next start` (ไม่ใช้ `output: standalone`) — เหมาะกับ NSSM บน Windows: เรียก `node.exe` + `node_modules\next\dist\bin\next start -H 0.0.0.0 -p <PORT>`
+`next start` — ใช้พอร์ตจาก `PORT` ใน `.env` (ค่าเริ่มต้น **3000**)
 
-`dev` / `start` bind ที่ `0.0.0.0` และใช้พอร์ตจาก `PORT` ใน `.env` (ค่าเริ่มต้น **3000**) เพื่อให้เข้าจากเครื่องอื่นในเครือข่ายได้ (รวม Tailscale)
+`dev` / `start` bind ที่ `0.0.0.0` และใช้พอร์ตจาก `PORT` ใน `.env` เพื่อให้เข้าจากเครื่องอื่นในเครือข่ายได้ (รวม Tailscale)
 
 อย่าเปิด URL ที่ Next แสดงเป็น `http://0.0.0.0:<port>` ในเบราว์เซอร์ — ใช้ `http://localhost:<port>` หรือ Tailscale IP แทน
 
@@ -122,15 +122,21 @@ http://100.106.34.125:3000
 มี `AUTH_TRUST_HOST=true` และ**อย่าตั้ง** `AUTH_URL`/`NEXTAUTH_URL` เป็น localhost — ไม่เช่นนั้น login จะเด้งกลับ localhost  
 ถ้า Windows Firewall ถาม ให้ Allow พอร์ตที่ตั้งใน `PORT` สำหรับ Node
 
-รัน worker แยก (PM2, Windows Service, หรือ systemd):
+รัน worker แยก (PM2 แนะนำบน Windows, หรือ systemd บน Linux):
 
 ```bash
 npm run worker:poll
 ```
 
-### Windows — NSSM (Production)
+### Windows — PM2 (Production)
 
-เตรียมครั้งแรกบน server:
+ติดตั้ง PM2 ครั้งแรก (ครั้งเดียว):
+
+```powershell
+npm install -g pm2
+```
+
+เตรียมโปรเจกต์บน server:
 
 ```powershell
 cd C:\NextJSTest\SPGPS
@@ -141,27 +147,67 @@ npx prisma migrate deploy
 npm run build
 ```
 
-แก้ path/port ใน `scripts/nssm-install.ps1` (ค่าเริ่มต้น `C:\NextJSTest\SPGPS`, พอร์ต `3003`) แล้วรัน **PowerShell as Administrator**:
+ตั้งค่า `PORT` และตัวแปรอื่นใน `.env` แล้วสตาร์ท:
 
 ```powershell
 cd C:\NextJSTest\SPGPS
 Set-ExecutionPolicy -Scope Process Bypass
-.\scripts\nssm-install.ps1
+.\scripts\pm2-install.ps1
 ```
 
-ลบ service เก่าก่อนติดตั้งใหม่:
+สคริปต์จะรัน 2 process:
+- **spgps-web** — Next.js (`next start -H 0.0.0.0`)
+- **spgps-worker** — GPS poll worker
+
+คำสั่งที่ใช้บ่อย:
+
+```powershell
+npm run pm2:status
+npm run pm2:logs
+npm run pm2:restart
+pm2 restart spgps-web
+pm2 restart spgps-worker
+```
+
+หยุดและลบออกจาก PM2:
+
+```powershell
+.\scripts\pm2-remove.ps1
+```
+
+#### ให้ PM2 รันอัตโนมัติหลัง reboot (Windows)
+
+```powershell
+npm install -g pm2-windows-startup
+pm2-startup install
+pm2 save
+```
+
+หลัง deploy ใหม่:
+
+```powershell
+git pull
+npm ci
+npx prisma migrate deploy
+npm run build
+pm2 restart all
+```
+
+#### ย้ายจาก NSSM มา PM2
+
+1. ลบ NSSM services เก่า (PowerShell as Administrator):
 
 ```powershell
 .\scripts\nssm-remove.ps1
 ```
 
-คำสั่งที่ใช้บ่อย:
+2. ติดตั้ง PM2 ตามด้านบน
 
-```cmd
-nssm status "SPGPS Web"
-nssm restart "SPGPS Web"
-nssm restart "SPGPS Worker"
-type C:\NextJSTest\SPGPS\logs\web.err.log
+3. ตรวจสอบ:
+
+```powershell
+pm2 status
+curl http://localhost:3003
 ```
 
 Firewall (ตัวอย่างพอร์ต 3003):
@@ -170,7 +216,24 @@ Firewall (ตัวอย่างพอร์ต 3003):
 netsh advfirewall firewall add rule name="SPGPS Web 3003" dir=in action=allow protocol=TCP localport=3003
 ```
 
-**สำคัญ:** ชื่อ service มีช่องว่าง — ใส่ quote เสมอ (`"SPGPS Web"`). รัน `nssm` ทีละคำสั่ง อย่าต่อเป็นบรรทัดเดียว. ถ้า error `marked for deletion` ให้ปิด `services.msc` รอ 30 วินาที หรือ reboot แล้วรัน `nssm-install.ps1` อีกครั้ง.
+### Windows — NSSM (legacy)
+
+ยังมีสคริปต์ NSSM ไว้สำหรับเครื่องที่ใช้อยู่แล้ว — แนะนำย้ายมา PM2 แทน
+
+```powershell
+.\scripts\nssm-install.ps1
+.\scripts\nssm-remove.ps1
+```
+
+คำสั่ง NSSM:
+
+```cmd
+nssm status "SPGPS Web"
+nssm restart "SPGPS Web"
+nssm restart "SPGPS Worker"
+```
+
+**สำคัญ:** ชื่อ service มีช่องว่าง — ใส่ quote เสมอ (`"SPGPS Web"`).
 
 ## Environment Variables
 
