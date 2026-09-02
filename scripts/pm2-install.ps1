@@ -13,6 +13,20 @@ function Require-Command($Name) {
     }
 }
 
+function Remove-Pm2AppsIfExist {
+    param([string[]]$Names)
+
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    try {
+        foreach ($name in $Names) {
+            & pm2 delete $name 2>&1 | Out-Null
+        }
+    } finally {
+        $ErrorActionPreference = $previous
+    }
+}
+
 Write-Host "=== SPGPS PM2 install ==="
 Write-Host "AppRoot: $AppRoot"
 Write-Host ""
@@ -31,7 +45,7 @@ if (-not (Test-Path (Join-Path $AppRoot ".env"))) {
 New-Item -ItemType Directory -Force -Path $LogsDir | Out-Null
 
 Write-Host "Stopping old PM2 apps (if any) ..."
-pm2 delete spgps-web spgps-worker 2>$null
+Remove-Pm2AppsIfExist -Names @("spgps-web", "spgps-worker")
 
 Write-Host "Starting apps from ecosystem.config.cjs ..."
 pm2 start ecosystem.config.cjs
