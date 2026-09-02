@@ -41,6 +41,28 @@ if (-not (Get-Command pm2-service-install -ErrorAction SilentlyContinue)) {
     npm install -g pm2-windows-service
 }
 
+function Repair-Pm2WindowsService {
+    $globalModules = npm root -g 2>$null
+    if (-not $globalModules) { return }
+
+    $serviceDir = Join-Path $globalModules "pm2-windows-service"
+    if (-not (Test-Path $serviceDir)) { return }
+
+    Write-Host "Patching pm2-windows-service (inquirer) ..."
+    Push-Location $serviceDir
+    try {
+        if (-not (Get-Command ncu -ErrorAction SilentlyContinue)) {
+            npm install -g npm-check-updates
+        }
+        ncu inquirer -u
+        npm install
+    } finally {
+        Pop-Location
+    }
+}
+
+Repair-Pm2WindowsService
+
 Write-Host "Stopping interactive PM2 daemon (if any) ..."
 $previous = $ErrorActionPreference
 $ErrorActionPreference = "SilentlyContinue"
@@ -48,6 +70,9 @@ $ErrorActionPreference = "SilentlyContinue"
 $ErrorActionPreference = $previous
 
 Write-Host "Installing PM2 service ..."
+Write-Host "Answer the prompts: Y for each question (defaults are fine)."
+Write-Host "Node circular dependency warnings are harmless."
+Write-Host ""
 pm2-service-install -n PM2
 
 Write-Host ""

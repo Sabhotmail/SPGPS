@@ -187,6 +187,11 @@ cd C:\NextJSTest\SPGPS
 .\scripts\pm2-install.ps1
 ```
 
+ตอนติดตั้ง service จะถามคำถามหลายข้อ — ตอบ **Y** ทุกข้อ (ใช้ค่า default ได้)  
+Warning เรื่อง `circular dependency` จาก Node ไม่เป็นไร
+
+ถ้าค้างหลังคำถามแรก ให้กด Ctrl+C แล้วรัน `git pull` และ `.\scripts\pm2-service-install.ps1` อีกครั้ง (สคริปต์จะ patch inquirer ให้)
+
 #### ให้ PM2 รันอัตโนมัติหลัง reboot (Windows)
 
 ```powershell
