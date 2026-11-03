@@ -278,7 +278,7 @@ export default function AdminDevicesPage() {
       )}
 
       {pullTarget && (
-        <div className="mb-4 rounded-lg border border-primary/25 bg-accent/60 p-3 sm:p-4">
+        <div className="mb-4 border border-border/70 bg-muted/35 p-3 sm:p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-medium">
@@ -332,7 +332,7 @@ export default function AdminDevicesPage() {
         </div>
       )}
 
-      <div className="overflow-x-auto border">
+      <div className="overflow-x-auto border border-border/70">
         <table className="workspace-table">
           <thead>
             <tr>
@@ -488,12 +488,12 @@ export default function AdminDevicesPage() {
 
       <section className="mt-12">
         <div className="mb-4 flex items-baseline justify-between gap-3">
-          <h2 className="text-[15px] font-semibold">Sync logs</h2>
+          <h2 className="text-[15px] font-medium tracking-tight">Sync logs</h2>
           <span className="text-[12px] tabular-nums text-muted-foreground">
             {logs.length} รายการล่าสุด
           </span>
         </div>
-        <div className="max-h-[min(50vh,420px)] overflow-y-auto overflow-x-auto border">
+        <div className="max-h-[min(50vh,420px)] overflow-y-auto overflow-x-auto border border-border/70">
           <table className="workspace-table">
             <thead className="sticky top-0 z-10 [&_th]:bg-muted/80 [&_th]:backdrop-blur-sm">
               <tr>

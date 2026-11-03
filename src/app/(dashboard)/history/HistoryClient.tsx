@@ -160,7 +160,7 @@ export default function HistoryClient() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <header className="relative z-[1100] mx-2 mt-2 shrink-0 rounded-lg border bg-background px-2.5 py-2.5 sm:mx-5 sm:mt-5 sm:px-4 sm:py-3">
+      <header className="relative z-[1100] shrink-0 border-b border-border/70 bg-background/95 px-3 py-3 backdrop-blur-sm sm:px-5 sm:py-4">
         <div className="flex flex-wrap items-end gap-2 sm:gap-3">
           <div className="min-w-0 flex-1 basis-full sm:basis-[220px]">
             <p className="mb-1 text-[11px] text-muted-foreground">พนักงาน</p>
@@ -187,7 +187,7 @@ export default function HistoryClient() {
             {loading ? "..." : "โหลด"}
           </Button>
           <div className="ml-auto hidden min-w-0 text-right md:block">
-            <p className="truncate text-[13px] font-medium">
+            <p className="truncate text-[15px] font-medium tracking-tight">
               {selectedDevice
                 ? selectedDevice.employeeName || selectedDevice.deviceName
                 : "ประวัติเส้นทาง"}
@@ -211,9 +211,9 @@ export default function HistoryClient() {
         )}
       </header>
 
-      <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-2 sm:gap-3 sm:p-5 lg:flex-row lg:items-start lg:overflow-hidden">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 lg:overflow-hidden">
-          <div className="relative h-[min(52vh,420px)] min-h-[280px] shrink-0 overflow-hidden rounded-lg border bg-background sm:h-[min(50vh,480px)] lg:h-[min(58vh,560px)] lg:min-h-[320px]">
+      <div className="relative flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain lg:flex-row lg:items-stretch lg:overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:overflow-hidden">
+          <div className="relative h-[min(52vh,420px)] min-h-[280px] shrink-0 overflow-hidden border-b border-border/70 bg-muted sm:h-[min(50vh,480px)] lg:h-auto lg:min-h-0 lg:flex-1">
             <HistoryMap
               locations={locations}
               highlightIndex={sliderIndex}
@@ -228,8 +228,8 @@ export default function HistoryClient() {
 
             {locations.length > 0 && coverage && (
               <div className="absolute bottom-2 left-2 z-[1000] flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-1.5 sm:bottom-3 sm:left-3 sm:gap-2">
-                <div className="rounded-md border bg-background/95 px-2 py-1 text-[10px] shadow-sm sm:px-2.5 sm:py-1.5 sm:text-[11px]">
-                  <span className="inline-block size-2 rounded-sm bg-[#0d9488]/40 align-middle" />{" "}
+                <div className="border border-border/70 bg-background/95 px-2 py-1 text-[11px] backdrop-blur-sm sm:px-2.5 sm:py-1.5">
+                  <span className="inline-block size-2 rounded-sm bg-primary/40 align-middle" />{" "}
                   <span className="font-medium tabular-nums text-foreground">
                     {formatCoverageArea(coverage.areaSqMeters)}
                   </span>
@@ -241,7 +241,7 @@ export default function HistoryClient() {
                 <button
                   type="button"
                   onClick={() => setShowCoverage((v) => !v)}
-                  className="rounded-md border bg-background/95 px-2 py-1 text-[10px] shadow-sm transition-colors hover:bg-muted/60 sm:px-2.5 sm:py-1.5 sm:text-[11px]"
+                  className="min-h-8 border border-border/70 bg-background/95 px-2.5 py-1 text-[11px] backdrop-blur-sm transition-colors hover:bg-muted"
                 >
                   {showCoverage ? "ซ่อน" : "พื้นที่"}
                 </button>
@@ -250,7 +250,7 @@ export default function HistoryClient() {
 
             {!deviceId && (
               <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center px-3">
-                <p className="rounded-md border bg-background/90 px-3 py-1.5 text-[12px] text-muted-foreground shadow-sm">
+                <p className="border border-border/70 bg-background/95 px-3 py-1.5 text-sm text-muted-foreground backdrop-blur-sm">
                   ค้นหาและเลือกพนักงานด้านบน
                 </p>
               </div>
@@ -258,7 +258,7 @@ export default function HistoryClient() {
 
             {deviceId && !loading && locations.length === 0 && (
               <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center px-3">
-                <p className="rounded-md border bg-background/90 px-3 py-1.5 text-center text-[12px] text-muted-foreground shadow-sm">
+                <p className="border border-border/70 bg-background/95 px-3 py-1.5 text-center text-sm text-muted-foreground backdrop-blur-sm">
                   ไม่พบข้อมูลในวันที่ {date}
                   {Object.keys(datesWithData).length === 0
                     ? " — รอ backfill หรือ poll ก่อน"
@@ -268,13 +268,13 @@ export default function HistoryClient() {
             )}
           </div>
 
-          <div className="relative z-0 shrink-0 overflow-hidden rounded-lg border bg-background px-3 py-2.5 sm:px-4 sm:py-3">
+          <div className="relative z-0 shrink-0 overflow-hidden border-b border-border/70 bg-background px-3 py-3 sm:px-5 sm:py-4 lg:border-b-0">
             {locations.length > 0 && currentPoint ? (
               <>
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[12px] text-muted-foreground sm:text-[13px]">
+                  <p className="text-[12px] tabular-nums text-muted-foreground sm:text-[13px]">
                     จุดที่{" "}
-                    <span className="font-medium tabular-nums text-foreground">
+                    <span className="font-medium text-foreground">
                       {sliderIndex + 1}
                     </span>{" "}
                     / {locations.length}
@@ -367,13 +367,13 @@ export default function HistoryClient() {
         {deviceId ? (
           <aside
             className={cn(
-              "relative z-10 flex w-full shrink-0 flex-col overflow-hidden rounded-lg border bg-background lg:h-[min(58vh,560px)] lg:max-h-none lg:min-h-[320px] lg:w-[280px] lg:self-start",
-              stopsOpen ? "max-h-[45vh]" : "max-h-none"
+              "relative z-10 flex w-full shrink-0 flex-col overflow-hidden border-t border-border/70 bg-background lg:h-auto lg:max-h-none lg:w-[300px] lg:self-stretch lg:border-l lg:border-t-0",
+              stopsOpen ? "max-h-[45vh] lg:max-h-none" : "max-h-none"
             )}
           >
             <button
               type="button"
-              className="flex shrink-0 items-center justify-between border-b px-3 py-2.5 text-left sm:px-4 sm:py-3 lg:pointer-events-none"
+              className="flex shrink-0 items-center justify-between border-b border-border/70 px-3 py-2.5 text-left sm:px-4 sm:py-3 lg:pointer-events-none"
               onClick={() => setStopsOpen((v) => !v)}
             >
               <div>
@@ -419,8 +419,8 @@ export default function HistoryClient() {
                       <li key={stop.id}>
                         <div
                           className={cn(
-                            "border-b px-3 py-2.5 transition-colors sm:px-4 sm:py-3",
-                            active && "bg-muted/60"
+                            "border-b border-border/70 px-3 py-2.5 transition-colors hover:bg-accent/60 sm:px-4 sm:py-3",
+                            active && "bg-accent/60"
                           )}
                         >
                           <button

@@ -96,7 +96,9 @@ export default function AdminGroupsPage() {
       />
 
       <section className="form-section mb-10">
-        <h2 className="mb-4 text-[15px] font-semibold">สร้างกลุ่ม</h2>
+        <h2 className="mb-4 text-[15px] font-medium tracking-tight">
+          สร้างกลุ่ม
+        </h2>
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
@@ -135,8 +137,12 @@ export default function AdminGroupsPage() {
                       key={d.id}
                       type="button"
                       size="sm"
-                      variant={checked ? "default" : "outline"}
-                      className="h-7 text-[12px]"
+                      variant="outline"
+                      className={
+                        checked
+                          ? "h-7 border-primary/30 bg-primary/10 text-[12px] text-primary hover:bg-primary/15 dark:bg-primary/10"
+                          : "h-7 bg-transparent text-[12px] dark:bg-transparent"
+                      }
                       onClick={() =>
                         setDeviceIds((prev) =>
                           checked
@@ -167,7 +173,7 @@ export default function AdminGroupsPage() {
       {groups.length === 0 ? (
         <p className="text-[13px] text-muted-foreground">ยังไม่มีกลุ่ม</p>
       ) : (
-        <div className="divide-y border-t">
+        <div className="divide-y divide-border/70 border-t border-border/70">
           {groups.map((g) => {
             const inGroupIds = new Set(g.devices.map((d) => d.id));
             const available = allDevices.filter((d) => !inGroupIds.has(d.id));
@@ -176,7 +182,9 @@ export default function AdminGroupsPage() {
               <section key={g.id} className="py-6">
                 <div className="mb-4 flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-[15px] font-semibold">{g.name}</h3>
+                    <h3 className="text-[15px] font-medium tracking-tight">
+                      {g.name}
+                    </h3>
                     {g.description && (
                       <p className="mt-1 text-[13px] text-muted-foreground">
                         {g.description}
@@ -207,8 +215,8 @@ export default function AdminGroupsPage() {
                         key={d.id}
                         type="button"
                         size="sm"
-                        variant="default"
-                        className="h-7 text-[12px]"
+                        variant="outline"
+                        className="h-7 border-primary/30 bg-primary/10 text-[12px] text-primary hover:bg-primary/15 dark:bg-primary/10"
                         title="คลิกเพื่อนำออกจากกลุ่ม"
                         onClick={() => {
                           updateGroupDevices(
@@ -237,7 +245,7 @@ export default function AdminGroupsPage() {
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="h-7 text-[12px]"
+                          className="h-7 bg-transparent text-[12px] dark:bg-transparent"
                           onClick={() => {
                             updateGroupDevices(g.id, [
                               ...g.devices.map((x) => x.id),

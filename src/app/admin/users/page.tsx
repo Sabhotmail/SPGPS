@@ -215,7 +215,9 @@ export default function AdminUsersPage() {
       />
 
       <section className="form-section mb-10">
-        <h2 className="mb-4 text-[15px] font-semibold">สร้างผู้ใช้</h2>
+        <h2 className="mb-4 text-[15px] font-medium tracking-tight">
+          สร้างผู้ใช้
+        </h2>
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-1.5">
@@ -273,8 +275,12 @@ export default function AdminUsersPage() {
                       key={g.id}
                       type="button"
                       size="sm"
-                      variant={checked ? "default" : "outline"}
-                      className="h-7 text-[12px]"
+                      variant="outline"
+                      className={
+                        checked
+                          ? "h-7 border-primary/30 bg-primary/10 text-[12px] text-primary hover:bg-primary/15 dark:bg-primary/10"
+                          : "h-7 bg-transparent text-[12px] dark:bg-transparent"
+                      }
                       onClick={() =>
                         setGroupIds((prev) =>
                           checked
@@ -304,9 +310,11 @@ export default function AdminUsersPage() {
       )}
 
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 p-4">
-          <div className="w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg">
-            <h2 className="text-[15px] font-semibold">แก้ไขผู้ใช้</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--scrim)] p-4">
+          <div className="w-full max-w-lg border border-border/70 bg-background p-6 shadow-md">
+            <h2 className="text-[15px] font-medium tracking-tight">
+              แก้ไขผู้ใช้
+            </h2>
             <p className="mt-1 text-[13px] text-muted-foreground">
               {editingUser.email}
             </p>
@@ -380,8 +388,12 @@ export default function AdminUsersPage() {
                           key={g.id}
                           type="button"
                           size="sm"
-                          variant={checked ? "default" : "outline"}
-                          className="h-7 text-[12px]"
+                          variant="outline"
+                          className={
+                            checked
+                              ? "h-7 border-primary/30 bg-primary/10 text-[12px] text-primary hover:bg-primary/15 dark:bg-primary/10"
+                              : "h-7 bg-transparent text-[12px] dark:bg-transparent"
+                          }
                           onClick={() =>
                             setEditForm((f) => ({
                               ...f,
@@ -422,7 +434,7 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      <div className="overflow-x-auto border">
+      <div className="overflow-x-auto border border-border/70">
         <table className="workspace-table">
           <thead>
             <tr>
@@ -452,8 +464,12 @@ export default function AdminUsersPage() {
                             key={g.id}
                             type="button"
                             size="xs"
-                            variant={active ? "default" : "outline"}
-                            className="h-6 text-[11px]"
+                            variant="outline"
+                            className={
+                              active
+                                ? "h-6 border-primary/30 bg-primary/10 text-[11px] text-primary hover:bg-primary/15 dark:bg-primary/10"
+                                : "h-6 bg-transparent text-[11px] dark:bg-transparent"
+                            }
                             onClick={() => {
                               const next = active
                                 ? u.groups
@@ -478,7 +494,7 @@ export default function AdminUsersPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 text-[12px]"
+                      className="h-7 text-[12px] text-muted-foreground hover:text-foreground"
                       onClick={() => openEdit(u)}
                     >
                       แก้ไข
@@ -486,7 +502,7 @@ export default function AdminUsersPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 text-[12px]"
+                      className="h-7 text-[12px] text-muted-foreground hover:text-foreground"
                       disabled={!u.isActive}
                       onClick={() => sendResetLink(u)}
                     >
@@ -495,7 +511,7 @@ export default function AdminUsersPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 text-[12px]"
+                      className="h-7 text-[12px] text-muted-foreground hover:text-foreground"
                       onClick={() => toggleActive(u)}
                     >
                       {u.isActive ? "ปิดใช้งาน" : "เปิดใช้งาน"}
