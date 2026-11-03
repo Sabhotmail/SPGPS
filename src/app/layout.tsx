@@ -1,14 +1,12 @@
-import { Inter, Noto_Sans_Thai, Geist } from "next/font/google";
+import { Manrope, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
 import { SessionProvider } from "@/components/SessionProvider";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-brand",
   display: "swap",
 });
 
@@ -36,7 +34,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="th" className={cn(inter.variable, notoSansThai.variable, "font-sans", geist.variable)}>
+    <html lang="th" className={cn(manrope.variable, notoSansThai.variable, "font-sans")} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem("spgps-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`,
+          }}
+        />
+      </head>
       <body>
         <SessionProvider>{children}</SessionProvider>
       </body>
