@@ -46,11 +46,11 @@ export function getDeviceStatus(lastSeenAt: string | null): "online" | "idle" | 
 export function statusColor(status: "online" | "idle" | "offline"): string {
   switch (status) {
     case "online":
-      return "#0d9488";
+      return "var(--status-online)";
     case "idle":
-      return "#d97706";
+      return "var(--status-idle)";
     case "offline":
-      return "#94a3b8";
+      return "var(--status-offline)";
   }
 }
 

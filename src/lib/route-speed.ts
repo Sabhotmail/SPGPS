@@ -35,7 +35,7 @@ export function speedColorKmh(speed: number | null): string {
   if (speed < 15) return "#f97316";
   if (speed < 30) return "#eab308";
   if (speed < 50) return "#22c55e";
-  return "#0d9488";
+  return "var(--primary)";
 }
 
 export function formatSpeedKmh(speed: number | null): string | null {
@@ -78,5 +78,5 @@ export const SPEED_LEGEND = [
   { label: "< 15", color: "#f97316", maxKmh: 15 },
   { label: "15–30", color: "#eab308", maxKmh: 30 },
   { label: "30–50", color: "#22c55e", maxKmh: 50 },
-  { label: "> 50", color: "#0d9488", maxKmh: null },
+  { label: "> 50", color: "var(--primary)", maxKmh: null },
 ] as const;

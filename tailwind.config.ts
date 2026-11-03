@@ -55,9 +55,9 @@ const config: Config = {
           ring: "var(--sidebar-ring)",
         },
         status: {
-          online: "#0d9488",
-          idle: "#d97706",
-          offline: "#94a3b8",
+          online: "var(--status-online)",
+          idle: "var(--status-idle)",
+          offline: "var(--status-offline)",
         },
       },
       borderRadius: {

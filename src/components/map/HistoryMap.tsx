@@ -28,9 +28,9 @@ import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
 import "leaflet/dist/leaflet.css";
 
 const COVERAGE_STYLE: L.PathOptions = {
-  fillColor: "#0d9488",
+  fillColor: "var(--primary)",
   fillOpacity: 0.32,
-  color: "#0f766e",
+  color: "color-mix(in oklch, var(--primary) 78%, black)",
   weight: 1,
   opacity: 0.55,
 };
