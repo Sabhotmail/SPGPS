@@ -25,24 +25,6 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-type StatusName = "online" | "idle" | "offline";
-
-const STATUS_FILTERS: { status: StatusName; label: string }[] = [
-  { status: "online", label: "ออนไลน์" },
-  { status: "idle", label: "นิ่ง" },
-  { status: "offline", label: "ออฟไลน์" },
-];
-
-function seenAgo(iso: string | null): string {
-  if (!iso) return "ยังไม่เคยเห็น";
-  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (minutes < 1) return "เมื่อสักครู่";
-  if (minutes < 60) return `${minutes} นาทีที่แล้ว`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} ชม.ที่แล้ว`;
-  return formatDateTime(iso);
-}
-
 const RealtimeMap = dynamic(
   () => import("@/components/map/RealtimeMap").then((m) => m.RealtimeMap),
   {
@@ -62,10 +44,7 @@ function DeviceListPanel({
   setSearch,
   loading,
   counts,
-  totalCount,
   lastRefresh,
-  statusFilter,
-  setStatusFilter,
   selectedDeviceId,
   setSelectedDeviceId,
   selectedDevice,
@@ -79,10 +58,7 @@ function DeviceListPanel({
   setSearch: (v: string) => void;
   loading: boolean;
   counts: { online: number; idle: number; offline: number };
-  totalCount: number;
   lastRefresh: Date | null;
-  statusFilter: StatusName | "all";
-  setStatusFilter: (v: StatusName | "all") => void;
   selectedDeviceId: string | null;
   setSelectedDeviceId: (id: string | null) => void;
   selectedDevice: DeviceLocation | undefined;
@@ -97,40 +73,30 @@ function DeviceListPanel({
   return (
     <>
       <header className="shrink-0 border-b px-4 py-4 pr-12 md:pr-4">
-        <h1 className="text-xl font-semibold tracking-tight">ตำแหน่ง</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          ตำแหน่งปัจจุบัน
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {statusFilter === "all"
-            ? `${totalCount} อุปกรณ์`
-            : `แสดง ${filteredDevices.length} จาก ${totalCount}`}
+          {filteredDevices.length} อุปกรณ์
           {lastRefresh &&
             ` · อัปเดต ${formatDateTime(lastRefresh.toISOString())}`}
         </p>
-        <div
-          className="mt-3 flex flex-wrap gap-2"
-          role="group"
-          aria-label="กรองตามสถานะ"
-        >
-          {STATUS_FILTERS.map(({ status, label }) => {
-            const pressed = statusFilter === status;
-            return (
-              <button
-                key={status}
-                type="button"
-                aria-pressed={pressed}
-                onClick={() => setStatusFilter(pressed ? "all" : status)}
-                className={cn(
-                  "inline-flex min-h-9 items-center gap-1.5 border px-2.5 text-sm",
-                  pressed
-                    ? "border-primary bg-accent text-accent-foreground"
-                    : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                )}
-              >
-                <StatusDot status={status} />
-                {label}
-                <span className="tabular-nums">{counts[status]}</span>
-              </button>
-            );
-          })}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(
+            [
+              ["online", counts.online],
+              ["idle", counts.idle],
+              ["offline", counts.offline],
+            ] as const
+          ).map(([status, count]) => (
+            <span
+              key={status}
+              className="inline-flex min-h-9 items-center gap-1.5 border border-border bg-background px-2.5 text-sm text-muted-foreground"
+            >
+              <StatusDot status={status} showLabel />
+              <span className="tabular-nums">{count}</span>
+            </span>
+          ))}
         </div>
       </header>
 
@@ -139,7 +105,7 @@ function DeviceListPanel({
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="ค้นหาชื่อหรืออุปกรณ์"
+            placeholder="ค้นหา"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-10 pl-8 text-sm"
@@ -169,11 +135,7 @@ function DeviceListPanel({
         ) : filteredDevices.length === 0 ? (
           <EmptyState
             title="ไม่พบอุปกรณ์"
-            description={
-              statusFilter === "all" && !search && selectedGroup === "all"
-                ? "รอ sync จาก Scalefusion"
-                : "ลองเปลี่ยนตัวกรองหรือคำค้น"
-            }
+            description="เปลี่ยนตัวกรอง หรือ sync จาก Scalefusion"
           />
         ) : (
           <ul>
@@ -188,7 +150,7 @@ function DeviceListPanel({
                     aria-pressed={active}
                     onClick={() => {
                       setSelectedDeviceId(d.id);
-                      if (d.latestLocation) onPickDevice?.(d.id);
+                      onPickDevice?.(d.id);
                     }}
                     className={cn(
                       "relative w-full border-b px-4 py-3 text-left transition-colors hover:bg-accent/60",
@@ -207,24 +169,33 @@ function DeviceListPanel({
                           {d.deviceName}
                         </p>
                       </div>
-                      {formatBattery(d.batteryPercent, d.batteryCharging) && (
-                        <span
-                          className={cn(
-                            "shrink-0 text-xs tabular-nums",
-                            (d.batteryPercent ?? 100) <= 15
-                              ? "text-destructive"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          {formatBattery(d.batteryPercent, d.batteryCharging)}
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <StatusDot status={status} />
+                        {formatBattery(d.batteryPercent, d.batteryCharging) && (
+                          <span
+                            className={cn(
+                              "text-xs tabular-nums",
+                              (d.batteryPercent ?? 100) <= 15
+                                ? "text-destructive"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {formatBattery(
+                              d.batteryPercent,
+                              d.batteryCharging
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs tabular-nums text-muted-foreground">
+                      {d.connectionStatus && (
+                        <span className="rounded border px-1 py-px text-[10px]">
+                          SF {d.connectionStatus}
                         </span>
                       )}
-                    </div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                      <StatusDot status={status} showLabel />
-                      <span className="tabular-nums">{seenAgo(d.lastSeenAt)}</span>
-                      {!d.latestLocation && (
-                        <span className="text-foreground">ไม่มีพิกัด</span>
+                      {d.lastSeenAt && (
+                        <span>{formatDateTime(d.lastSeenAt)}</span>
                       )}
                     </div>
                   </button>
@@ -275,9 +246,6 @@ function DeviceListPanel({
             )}
             {selectedDevice.phoneNo && <p>{selectedDevice.phoneNo}</p>}
           </div>
-          {!selectedDevice.latestLocation && (
-            <p className="mt-2 text-xs text-foreground">ยังไม่มีพิกัดบนแผนที่</p>
-          )}
           <div className="mt-3 flex flex-wrap gap-2">
             {selectedDevice.latestLocation && (
               <Button
@@ -335,7 +303,6 @@ export default function MapPage() {
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
   const [selectedGroup, setSelectedGroup] = useState("all");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusName | "all">("all");
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
@@ -367,7 +334,7 @@ export default function MapPage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  const matchedDevices = useMemo(() => {
+  const filteredDevices = useMemo(() => {
     return devices.filter((d) => {
       const matchGroup =
         selectedGroup === "all" ||
@@ -382,21 +349,14 @@ export default function MapPage() {
   }, [devices, selectedGroup, search]);
 
   const counts = useMemo(() => {
-    return matchedDevices.reduce(
+    return filteredDevices.reduce(
       (acc, d) => {
         acc[getDeviceStatus(d.lastSeenAt)]++;
         return acc;
       },
       { online: 0, idle: 0, offline: 0 }
     );
-  }, [matchedDevices]);
-
-  const filteredDevices = useMemo(() => {
-    if (statusFilter === "all") return matchedDevices;
-    return matchedDevices.filter(
-      (d) => getDeviceStatus(d.lastSeenAt) === statusFilter
-    );
-  }, [matchedDevices, statusFilter]);
+  }, [filteredDevices]);
 
   const selectedDevice = filteredDevices.find((d) => d.id === selectedDeviceId);
 
@@ -409,10 +369,7 @@ export default function MapPage() {
     setSearch,
     loading,
     counts,
-    totalCount: matchedDevices.length,
     lastRefresh,
-    statusFilter,
-    setStatusFilter,
     selectedDeviceId,
     setSelectedDeviceId,
     selectedDevice,

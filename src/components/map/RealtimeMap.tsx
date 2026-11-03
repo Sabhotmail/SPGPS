@@ -1,7 +1,7 @@
 "use client";
 
 import L from "leaflet";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   MapContainer,
   Marker,
@@ -25,11 +25,11 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
 import "leaflet/dist/leaflet.css";
 
-function createIcon(color: string, active: boolean) {
+function createIcon(color: string) {
   const hit = 28;
   return L.divIcon({
     className: "spgps-map-icon",
-    html: `<div class="spgps-pin-hit"><span class="spgps-pin${active ? " is-active" : ""}" style="background:${color}"></span></div>`,
+    html: `<div class="spgps-pin-hit"><span class="spgps-pin" style="background:${color}"></span></div>`,
     iconSize: [hit, hit],
     iconAnchor: [hit / 2, hit / 2],
   });
@@ -143,6 +143,7 @@ function DeviceMarker({
 }) {
   const markerRef = useRef<L.Marker | null>(null);
   const status = getDeviceStatus(device.lastSeenAt);
+  const icon = useMemo(() => createIcon(statusColor(status)), [status]);
   const loc = device.latestLocation!;
   const model = deviceModelLabel(device);
   const battery = formatBattery(
@@ -159,6 +160,8 @@ function DeviceMarker({
   useEffect(() => {
     const marker = markerRef.current;
     if (!marker) return;
+    const pin = marker.getElement()?.querySelector(".spgps-pin");
+    pin?.classList.toggle("is-active", active);
     if (active) marker.openPopup();
   }, [active]);
 
@@ -166,7 +169,7 @@ function DeviceMarker({
     <Marker
       ref={markerRef}
       position={[loc.latitude, loc.longitude]}
-      icon={createIcon(statusColor(status), active)}
+      icon={icon}
       eventHandlers={{ click: () => onSelect(device.id) }}
       zIndexOffset={active ? 1000 : 0}
     >
