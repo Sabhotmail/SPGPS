@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Props = {
   role: "ADMIN" | "VIEWER";
@@ -64,10 +65,10 @@ function NavLink({
       href={href}
       title={collapsed ? label : undefined}
       className={cn(
-        "group relative flex items-center rounded-sm text-[13px] transition-colors",
-        collapsed ? "justify-center px-0 py-2" : "gap-2.5 py-1.5 pl-3 pr-2",
+        "group relative flex min-h-9 items-center text-sm transition-colors",
+        collapsed ? "justify-center px-0 py-2" : "gap-2.5 py-2 pl-3 pr-2",
         active
-          ? "bg-sidebar-accent/70 font-medium text-sidebar-accent-foreground"
+          ? "font-medium text-foreground"
           : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground"
       )}
     >
@@ -103,7 +104,7 @@ function MobileTabLink({
     <Link
       href={href}
       className={cn(
-        "flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[10px] transition-colors",
+        "flex min-h-11 min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[11px] transition-colors",
         active
           ? "font-medium text-primary"
           : "text-muted-foreground active:text-foreground"
@@ -160,7 +161,7 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
       >
         <div
           className={cn(
-            "flex items-start gap-2 py-4",
+            "flex items-start gap-2 py-5",
             collapsed ? "flex-col items-center px-2" : "px-3"
           )}
         >
@@ -171,16 +172,16 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
           >
             <span
               className={cn(
-                "flex items-center gap-2 text-[15px] font-semibold tracking-tight text-foreground",
-                collapsed && "justify-center"
+                "font-brand flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground",
+                collapsed && "justify-center text-sm"
               )}
             >
               <span className="brand-mark" aria-hidden />
               {!collapsed && "SPGPS"}
             </span>
             {!collapsed && (
-              <span className="mt-0.5 block pl-4 text-[11px] text-muted-foreground">
-                Fleet tracking
+              <span className="mt-1 block text-[11px] tracking-[0.14em] text-muted-foreground">
+                FLEET
               </span>
             )}
           </Link>
@@ -203,7 +204,7 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
 
         <nav
           className={cn(
-            "flex-1 space-y-5 overflow-y-auto overflow-x-hidden",
+            "flex-1 space-y-6 overflow-y-auto overflow-x-hidden",
             collapsed ? "px-1.5" : "px-2"
           )}
         >
@@ -221,8 +222,8 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
           {role === "ADMIN" && (
             <div>
               {!collapsed && (
-                <p className="mb-2 px-3 text-[11px] text-muted-foreground/70">
-                  การตั้งค่า
+                <p className="mb-2 px-3 text-[11px] font-medium tracking-[0.12em] text-muted-foreground">
+                  ตั้งค่า
                 </p>
               )}
               {collapsed && (
@@ -248,12 +249,13 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
             collapsed ? "p-2" : "p-3"
           )}
         >
+          <div className={cn("mb-2 flex", collapsed ? "justify-center" : "justify-end")}>
+            <ThemeToggle />
+          </div>
           {!collapsed && (
             <>
-              <p className="truncate px-1 text-[12px] text-foreground">
-                {email}
-              </p>
-              <p className="mt-0.5 px-1 text-[11px] text-muted-foreground">
+              <p className="truncate px-1 text-sm text-foreground">{email}</p>
+              <p className="mt-0.5 px-1 text-[11px] tracking-wide text-muted-foreground">
                 {role}
               </p>
             </>
@@ -282,11 +284,11 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
         <div className="fixed inset-0 z-[1200] md:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-foreground/20 animate-in fade-in-0"
+            className="absolute inset-0 bg-[var(--scrim)] animate-in fade-in-0"
             aria-label="ปิดเมนู"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="absolute inset-x-3 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] rounded-xl border bg-background p-3 shadow-lg animate-in fade-in-0 slide-in-from-bottom-2">
+          <div className="absolute inset-x-3 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] border bg-background p-3 shadow-lg animate-in fade-in-0 slide-in-from-bottom-2">
             <div className="mb-2 flex items-center justify-between px-1">
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-medium">{email}</p>
@@ -367,7 +369,7 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
             type="button"
             onClick={() => setMobileMenuOpen((o) => !o)}
             className={cn(
-              "flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[10px] transition-colors",
+              "flex min-h-11 min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[11px] transition-colors",
               mobileMenuOpen || pathname.startsWith("/admin")
                 ? "font-medium text-foreground"
                 : "text-muted-foreground"
