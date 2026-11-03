@@ -2,7 +2,14 @@
 
 import L from "leaflet";
 import { useEffect, useRef } from "react";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  ZoomControl,
+  useMap,
+} from "react-leaflet";
 import Link from "next/link";
 import {
   DeviceLocation,
@@ -19,12 +26,12 @@ import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
 import "leaflet/dist/leaflet.css";
 
 function createIcon(color: string, active: boolean) {
-  const size = active ? 18 : 14;
+  const hit = 28;
   return L.divIcon({
     className: "spgps-map-icon",
-    html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:${active ? 3 : 2}px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.35)"></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    html: `<div class="spgps-pin-hit"><span class="spgps-pin${active ? " is-active" : ""}" style="background:${color}"></span></div>`,
+    iconSize: [hit, hit],
+    iconAnchor: [hit / 2, hit / 2],
   });
 }
 
@@ -73,7 +80,10 @@ function InvalidateSize() {
 
   useEffect(() => {
     const container = map.getContainer();
-    const refresh = () => map.invalidateSize({ animate: false });
+    const refresh = () => {
+      if (!container.isConnected) return;
+      map.invalidateSize({ animate: false });
+    };
 
     let raf2 = 0;
     const raf1 = window.requestAnimationFrame(() => {
@@ -111,6 +121,7 @@ function FocusSelected({
     if (!selectedDeviceId) return;
     const device = devices.find((d) => d.id === selectedDeviceId);
     if (!device?.latestLocation) return;
+    if (!map.getContainer()?.isConnected) return;
     map.flyTo(
       [device.latestLocation.latitude, device.latestLocation.longitude],
       Math.max(map.getZoom(), 14),
@@ -247,15 +258,15 @@ export function RealtimeMap({
   const defaultCenter: [number, number] = [13.7563, 100.5018];
 
   return (
-    <div className="h-full w-full bg-background">
+    <div className="h-full w-full bg-muted">
       <MapContainer
         center={defaultCenter}
         zoom={11}
-        className="h-full w-full bg-background"
-        style={{ background: "#fff" }}
+        className="h-full w-full"
         scrollWheelZoom
         zoomControl={false}
       >
+        <ZoomControl position="bottomright" />
         <TileLayer attribution={MAP_TILE_ATTRIBUTION} url={MAP_TILE_URL} />
         <FitBounds devices={devices} />
         <InvalidateSize />

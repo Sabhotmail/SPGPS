@@ -156,6 +156,30 @@
   border: none !important;
 }
 
+.spgps-pin-hit {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+}
+
+.spgps-pin {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid white;
+  border-radius: 9999px;
+  box-shadow: 0 1px 6px rgb(15 23 42 / 0.35);
+  transition: width 160ms ease, height 160ms ease, border-width 160ms ease;
+}
+
+.spgps-pin.is-active {
+  width: 18px;
+  height: 18px;
+  border-width: 3px;
+}
+
 .leaflet-popup-content-wrapper {
   @apply overflow-hidden rounded-lg border border-border bg-background shadow-md;
   padding: 0;
@@ -292,4 +316,13 @@
   top: 0;
   bottom: 0;
   max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-nav-in,
+  .spgps-pin {
+    animation: none !important;
+    transition: none !important;
+  }
 }
