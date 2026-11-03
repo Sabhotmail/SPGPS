@@ -25,11 +25,12 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
 import "leaflet/dist/leaflet.css";
 
-function createIcon(color: string) {
+function createIcon(color: string, active = false) {
   const hit = 28;
+  const activeClass = active ? " is-active" : "";
   return L.divIcon({
     className: "spgps-map-icon",
-    html: `<div class="spgps-pin-hit"><span class="spgps-pin" style="background:${color}"></span></div>`,
+    html: `<div class="spgps-pin-hit"><span class="spgps-pin${activeClass}" style="background:${color}"></span></div>`,
     iconSize: [hit, hit],
     iconAnchor: [hit / 2, hit / 2],
   });
@@ -143,7 +144,7 @@ function DeviceMarker({
 }) {
   const markerRef = useRef<L.Marker | null>(null);
   const status = getDeviceStatus(device.lastSeenAt);
-  const icon = useMemo(() => createIcon(statusColor(status)), [status]);
+  const icon = useMemo(() => createIcon(statusColor(status), active), [status, active]);
   const loc = device.latestLocation!;
   const model = deviceModelLabel(device);
   const battery = formatBattery(
@@ -162,6 +163,11 @@ function DeviceMarker({
     if (!marker) return;
     const pin = marker.getElement()?.querySelector(".spgps-pin");
     pin?.classList.toggle("is-active", active);
+  }, [active, status, icon]);
+
+  useEffect(() => {
+    const marker = markerRef.current;
+    if (!marker) return;
     if (active) marker.openPopup();
   }, [active]);
 

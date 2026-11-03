@@ -378,7 +378,7 @@ export default function MapPage() {
   return (
     <div className="relative flex h-full min-h-0 flex-1 overflow-hidden animate-fade-up">
       {/* Desktop list */}
-      <aside className="hidden h-full w-[320px] shrink-0 flex-col overflow-hidden border-r bg-background md:flex">
+      <aside className="hidden h-full w-[300px] shrink-0 flex-col overflow-hidden border-r bg-background md:flex">
         <DeviceListPanel {...listProps} />
       </aside>
 
