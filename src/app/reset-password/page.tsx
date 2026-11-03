@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { AuthFrame } from "@/components/AuthFrame";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -58,12 +59,12 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="space-y-3">
-        <p className="text-[13px] text-destructive">
+        <p className="text-sm text-destructive" role="alert">
           ไม่พบโทเค็นในลิงก์ กรุณาขอรีเซ็ตใหม่
         </p>
         <Link
           href="/forgot-password"
-          className="text-[13px] underline-offset-4 hover:underline"
+          className="text-sm underline-offset-4 hover:underline"
         >
           ไปหน้าลืมรหัสผ่าน
         </Link>
@@ -74,7 +75,7 @@ function ResetPasswordForm() {
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="password" className="text-[13px]">
+        <Label htmlFor="password">
           รหัสผ่านใหม่
         </Label>
         <Input
@@ -85,11 +86,11 @@ function ResetPasswordForm() {
           required
           minLength={6}
           autoComplete="new-password"
-          className="h-9"
+          className="h-10"
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="confirm" className="text-[13px]">
+        <Label htmlFor="confirm">
           ยืนยันรหัสผ่าน
         </Label>
         <Input
@@ -100,11 +101,15 @@ function ResetPasswordForm() {
           required
           minLength={6}
           autoComplete="new-password"
-          className="h-9"
+          className="h-10"
         />
       </div>
-      {error && <p className="text-[13px] text-destructive">{error}</p>}
-      <Button type="submit" className="h-9 w-full" disabled={loading}>
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
+      <Button type="submit" className="h-10 w-full" disabled={loading}>
         {loading ? "กำลังบันทึก..." : "ตั้งรหัสผ่านใหม่"}
       </Button>
     </form>
@@ -113,34 +118,25 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-svh items-center justify-center px-6 py-12">
-      <div className="w-full max-w-[320px] animate-fade-up">
-        <p className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          <span className="brand-mark" aria-hidden />
-          SPGPS
-        </p>
-        <h1 className="mt-1 text-[15px] font-semibold tracking-tight">
-          ตั้งรหัสผ่านใหม่
-        </h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">
-          รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร
-        </p>
-        <Suspense
-          fallback={
-            <p className="mt-6 text-[13px] text-muted-foreground">กำลังโหลด...</p>
-          }
+    <AuthFrame
+      title="ตั้งรหัสผ่านใหม่"
+      description="รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"
+    >
+      <Suspense
+        fallback={
+          <p className="mt-8 text-sm text-muted-foreground">กำลังโหลด...</p>
+        }
+      >
+        <ResetPasswordForm />
+      </Suspense>
+      <p className="mt-5 text-sm">
+        <Link
+          href="/login"
+          className="text-foreground underline-offset-4 hover:underline"
         >
-          <ResetPasswordForm />
-        </Suspense>
-        <p className="mt-6 text-[13px]">
-          <Link
-            href="/login"
-            className="text-foreground underline-offset-4 hover:underline"
-          >
-            กลับไปเข้าสู่ระบบ
-          </Link>
-        </p>
-      </div>
-    </div>
+          กลับไปเข้าสู่ระบบ
+        </Link>
+      </p>
+    </AuthFrame>
   );
 }

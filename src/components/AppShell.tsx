@@ -223,7 +223,7 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
             <div>
               {!collapsed && (
                 <p className="mb-2 px-3 text-[11px] font-medium tracking-[0.12em] text-muted-foreground">
-                  ตั้งค่า
+                  การตั้งค่า
                 </p>
               )}
               {collapsed && (

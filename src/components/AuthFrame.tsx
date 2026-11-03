@@ -21,7 +21,9 @@ export function AuthFrame({ title, description, children }: Props) {
             ติดตามตำแหน่งอุปกรณ์จาก Scalefusion และดูประวัติเส้นทางตามสิทธิ์กลุ่ม
           </p>
         </div>
-        <p className="text-sm text-muted-foreground">สำหรับผู้ใช้ภายในองค์กร</p>
+        <p className="text-sm text-muted-foreground">
+          สำหรับผู้ใช้ภายในองค์กรเท่านั้น
+        </p>
       </section>
 
       <section className="relative flex items-center justify-center px-6 py-16">
