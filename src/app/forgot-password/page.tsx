@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
   return (
     <AuthFrame
       title="ลืมรหัสผ่าน"
-      description="กรอกอีเมลที่ใช้เข้าสู่ระบบ ระบบจะส่งลิงก์ตั้งรหัสใหม่ ใช้ได้ 1 ชั่วโมง"
+      description="กรอกอีเมลที่ใช้เข้าสู่ระบบ ระบบจะส่งลิงก์ตั้งรหัสใหม่ (ใช้ได้ 1 ชั่วโมง)"
     >
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <div className="space-y-1.5">

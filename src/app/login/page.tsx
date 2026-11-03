@@ -91,7 +91,7 @@ function LoginForm() {
           href="/forgot-password"
           className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
-          ลืมรหัสผ่าน
+          ลืมรหัสผ่าน?
         </Link>
       </p>
     </AuthFrame>
