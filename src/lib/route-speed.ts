@@ -35,7 +35,8 @@ export function speedColorKmh(speed: number | null): string {
   if (speed < 15) return "#f97316";
   if (speed < 30) return "#eab308";
   if (speed < 50) return "#22c55e";
-  return "var(--primary)";
+  // Solid hex for Leaflet SVG stroke — CSS vars can misbehave as path attrs.
+  return "#3b6fd4";
 }
 
 export function formatSpeedKmh(speed: number | null): string | null {
@@ -78,5 +79,5 @@ export const SPEED_LEGEND = [
   { label: "< 15", color: "#f97316", maxKmh: 15 },
   { label: "15–30", color: "#eab308", maxKmh: 30 },
   { label: "30–50", color: "#22c55e", maxKmh: 50 },
-  { label: "> 50", color: "var(--primary)", maxKmh: null },
+  { label: "> 50", color: "#3b6fd4", maxKmh: null },
 ] as const;

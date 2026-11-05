@@ -25,12 +25,14 @@ import {
   buildSpeedSegments,
 } from "@/lib/route-speed";
 import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
+import { isMapAlive } from "@/lib/leaflet-alive";
 import "leaflet/dist/leaflet.css";
 
 const COVERAGE_STYLE: L.PathOptions = {
-  fillColor: "var(--primary)",
+  // Solid colors for Leaflet SVG — avoid CSS vars / color-mix in path attrs.
+  fillColor: "#3b6fd4",
   fillOpacity: 0.32,
-  color: "color-mix(in oklch, var(--primary) 78%, black)",
+  color: "#2f5bb8",
   weight: 1,
   opacity: 0.55,
 };
@@ -45,7 +47,7 @@ function CoverageOverlay({
   const map = useMap();
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !isMapAlive(map)) return;
 
     const data = coverageToDisplayGeoJson(coverage);
     const layer = L.geoJSON(data, {
@@ -55,7 +57,12 @@ function CoverageOverlay({
     layer.addTo(map);
 
     return () => {
-      map.removeLayer(layer);
+      if (!isMapAlive(map)) return;
+      try {
+        map.removeLayer(layer);
+      } catch {
+        // Map already torn down (e.g. MapContainer remount).
+      }
     };
   }, [map, coverage, visible]);
 
@@ -179,34 +186,46 @@ function InvalidateSize({ layoutKey }: { layoutKey: string }) {
   const map = useMap();
 
   useEffect(() => {
-    const container = map.getContainer();
+    let container: HTMLElement;
+    try {
+      container = map.getContainer();
+    } catch {
+      return;
+    }
 
+    let debounceTimer = 0;
+    const refreshNow = () => {
+      if (!isMapAlive(map)) return;
+      try {
+        map.invalidateSize({ animate: false });
+      } catch {
+        // Ignore Leaflet teardown races (_leaflet_pos).
+      }
+    };
+    // Debounce ResizeObserver — ancestor layout / sidebar width transitions
+    // otherwise call invalidateSize mid-reflow and throw on _leaflet_pos.
     const refresh = () => {
-      map.invalidateSize({ animate: false });
+      window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(refreshNow, 120);
     };
 
     // Double-rAF waits for browser layout after side panel / bottom bar mount.
     let raf2 = 0;
     const raf1 = window.requestAnimationFrame(() => {
-      raf2 = window.requestAnimationFrame(refresh);
+      raf2 = window.requestAnimationFrame(refreshNow);
     });
 
-    const timers = [0, 50, 150, 400].map((ms) =>
-      window.setTimeout(refresh, ms)
-    );
+    const timers = [50, 200].map((ms) => window.setTimeout(refreshNow, ms));
 
     const ro = new ResizeObserver(() => refresh());
-    ro.observe(container);
-    let el: HTMLElement | null = container.parentElement;
-    for (let i = 0; i < 4 && el; i++) {
-      ro.observe(el);
-      el = el.parentElement;
-    }
+    // Only the map container — do not walk ancestors (sidebar transitions).
+    if (container.isConnected) ro.observe(container);
 
     window.addEventListener("resize", refresh);
     return () => {
       window.cancelAnimationFrame(raf1);
       window.cancelAnimationFrame(raf2);
+      window.clearTimeout(debounceTimer);
       timers.forEach((t) => window.clearTimeout(t));
       ro.disconnect();
       window.removeEventListener("resize", refresh);
@@ -232,8 +251,13 @@ function FitRoute({
     );
 
     const run = () => {
-      map.invalidateSize({ animate: false });
-      map.fitBounds(points, { padding: [48, 48], maxZoom: 15 });
+      if (!isMapAlive(map)) return;
+      try {
+        map.invalidateSize({ animate: false });
+        map.fitBounds(points, { padding: [48, 48], maxZoom: 15 });
+      } catch {
+        // Ignore Leaflet teardown races (_leaflet_pos).
+      }
     };
 
     let raf2 = 0;
@@ -255,9 +279,13 @@ function FitRoute({
 function PanToStop({ stop }: { stop: StopPoint | null }) {
   const map = useMap();
   useEffect(() => {
-    if (!stop) return;
-    map.invalidateSize({ animate: false });
-    map.panTo([stop.latitude, stop.longitude], { animate: true });
+    if (!stop || !isMapAlive(map)) return;
+    try {
+      map.invalidateSize({ animate: false });
+      map.panTo([stop.latitude, stop.longitude], { animate: true });
+    } catch {
+      // Ignore Leaflet teardown races (_leaflet_pos).
+    }
   }, [stop, map]);
   return null;
 }
@@ -274,6 +302,9 @@ function StopMarker({
   onSelect?: (stop: StopPoint) => void;
 }) {
   const markerRef = useRef<L.Marker | null>(null);
+  // Memoize — a fresh L.divIcon every render makes react-leaflet call setIcon
+  // on each slider tick and can throw "_leaflet_pos".
+  const icon = useMemo(() => stopIcon(index, active), [index, active]);
 
   useEffect(() => {
     const marker = markerRef.current;
@@ -285,7 +316,7 @@ function StopMarker({
     <Marker
       ref={markerRef}
       position={[stop.latitude, stop.longitude]}
-      icon={stopIcon(index, active)}
+      icon={icon}
       eventHandlers={{
         click: () => onSelect?.(stop),
       }}
@@ -438,16 +469,17 @@ export function HistoryMap({
     endPoint != null &&
     locations.length > 0 &&
     highlightIndex !== locations.length - 1;
-  const mapKey =
+  // Do NOT remount MapContainer via key when route data changes — destroying
+  // Leaflet mid-flight is a common source of "_leaflet_pos" TypeErrors.
+  const routeId =
     locations.length > 0
-      ? `${locations[0]!.id}-${locations.length}`
+      ? `${locations[0]!.id}-${locations[locations.length - 1]!.id}-${locations.length}`
       : "empty";
-  const sizeKey = `${layoutKey}:${mapKey}:stops=${stops.length}:cov=${showCoverage && coverage ? coverage.cellCount : 0}`;
+  const sizeKey = `${layoutKey}:${routeId}:stops=${stops.length}:cov=${showCoverage && coverage ? coverage.cellCount : 0}`;
 
   return (
     <div className="relative h-full w-full overflow-hidden">
       <MapContainer
-        key={mapKey}
         center={defaultCenter}
         zoom={11}
         className="h-full w-full"
@@ -458,7 +490,7 @@ export function HistoryMap({
         <TileLayer attribution={MAP_TILE_ATTRIBUTION} url={MAP_TILE_URL} />
         <InvalidateSize layoutKey={sizeKey} />
         {locations.length > 0 && (
-          <FitRoute locations={locations} layoutKey={sizeKey} />
+          <FitRoute locations={locations} layoutKey={routeId} />
         )}
         <PanToStop stop={selectedStop} />
         {showCoverage && coverage && (

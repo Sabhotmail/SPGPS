@@ -1,9 +1,7 @@
 import { auth } from "@/lib/auth";
-import { getAppTimezone } from "@/lib/app-timezone";
 import { canAccessDevice } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -25,24 +23,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const tz = getAppTimezone();
-
-  const rows = await prisma.$queryRaw<
-    { date: string; count: number }[]
-  >(Prisma.sql`
-    SELECT
-      to_char(recorded_at AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS date,
-      COUNT(*)::int AS count
-    FROM location_records
-    WHERE device_id = ${deviceId}
-    GROUP BY 1
-    ORDER BY 1 DESC
-  `);
+  const rows = await prisma.locationDayStat.findMany({
+    where: { deviceId },
+    orderBy: { day: "desc" },
+    select: { day: true, pointCount: true },
+  });
 
   return NextResponse.json({
-    dates: rows.map((r) => ({
-      date: r.date,
-      count: Number(r.count),
-    })),
+    dates: rows.map((r) => {
+      // @db.Date arrives as UTC midnight of that calendar day
+      const y = r.day.getUTCFullYear();
+      const m = String(r.day.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(r.day.getUTCDate()).padStart(2, "0");
+      return { date: `${y}-${m}-${d}`, count: r.pointCount };
+    }),
   });
 }

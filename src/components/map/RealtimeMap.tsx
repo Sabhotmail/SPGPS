@@ -23,14 +23,17 @@ import {
 } from "@/lib/types";
 import { StatusDot } from "@/components/ui/status-dot";
 import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
+import { isMapAlive } from "@/lib/leaflet-alive";
 import "leaflet/dist/leaflet.css";
 
-function createIcon(color: string, active = false) {
+/** Status-only icon. Active state is toggled via CSS class — do not bake it
+ * into the icon HTML or react-leaflet will setIcon on every selection and can
+ * throw "_leaflet_pos" while the marker DOM is mid-update. */
+function createIcon(color: string) {
   const hit = 28;
-  const activeClass = active ? " is-active" : "";
   return L.divIcon({
     className: "spgps-map-icon",
-    html: `<div class="spgps-pin-hit"><span class="spgps-pin${activeClass}" style="background:${color}"></span></div>`,
+    html: `<div class="spgps-pin-hit"><span class="spgps-pin" style="background:${color}"></span></div>`,
     iconSize: [hit, hit],
     iconAnchor: [hit / 2, hit / 2],
   });
@@ -66,9 +69,14 @@ function FitBounds({ devices }: { devices: DeviceLocation[] }) {
     if (points.length === 0) return;
 
     if (!initialized.current) {
-      map.invalidateSize({ animate: false });
-      map.fitBounds(points, { padding: [48, 48], maxZoom: 14 });
-      initialized.current = true;
+      if (!isMapAlive(map)) return;
+      try {
+        map.invalidateSize({ animate: false });
+        map.fitBounds(points, { padding: [48, 48], maxZoom: 14 });
+        initialized.current = true;
+      } catch {
+        // Ignore Leaflet teardown races (_leaflet_pos).
+      }
     }
   }, [devices, map]);
 
@@ -80,26 +88,45 @@ function InvalidateSize() {
   const map = useMap();
 
   useEffect(() => {
-    const container = map.getContainer();
+    let container: HTMLElement;
+    try {
+      container = map.getContainer();
+    } catch {
+      return;
+    }
+
+    let debounceTimer = 0;
+    const refreshNow = () => {
+      if (!isMapAlive(map)) return;
+      try {
+        map.invalidateSize({ animate: false });
+      } catch {
+        // Ignore Leaflet teardown races (_leaflet_pos).
+      }
+    };
+    // Debounce: sidebar width transitions + ResizeObserver otherwise spam
+    // invalidateSize mid-layout and Leaflet can throw on missing _leaflet_pos.
     const refresh = () => {
-      if (!container.isConnected) return;
-      map.invalidateSize({ animate: false });
+      window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(refreshNow, 120);
     };
 
     let raf2 = 0;
     const raf1 = window.requestAnimationFrame(() => {
-      raf2 = window.requestAnimationFrame(refresh);
+      raf2 = window.requestAnimationFrame(refreshNow);
     });
-    const timers = [50, 200, 400].map((ms) => window.setTimeout(refresh, ms));
+    const timers = [50, 250].map((ms) => window.setTimeout(refreshNow, ms));
 
     const ro = new ResizeObserver(() => refresh());
-    ro.observe(container);
-    if (container.parentElement) ro.observe(container.parentElement);
+    // Observe only the map container — ancestor chains fire during sidebar
+    // width transitions and are a common _leaflet_pos trigger.
+    if (container.isConnected) ro.observe(container);
 
     window.addEventListener("resize", refresh);
     return () => {
       window.cancelAnimationFrame(raf1);
       window.cancelAnimationFrame(raf2);
+      window.clearTimeout(debounceTimer);
       timers.forEach((t) => window.clearTimeout(t));
       ro.disconnect();
       window.removeEventListener("resize", refresh);
@@ -122,12 +149,16 @@ function FocusSelected({
     if (!selectedDeviceId) return;
     const device = devices.find((d) => d.id === selectedDeviceId);
     if (!device?.latestLocation) return;
-    if (!map.getContainer()?.isConnected) return;
-    map.flyTo(
-      [device.latestLocation.latitude, device.latestLocation.longitude],
-      Math.max(map.getZoom(), 14),
-      { duration: 0.6 }
-    );
+    if (!isMapAlive(map)) return;
+    try {
+      map.flyTo(
+        [device.latestLocation.latitude, device.latestLocation.longitude],
+        Math.max(map.getZoom(), 14),
+        { duration: 0.6 }
+      );
+    } catch {
+      // Ignore Leaflet teardown races (_leaflet_pos).
+    }
   }, [selectedDeviceId, devices, map]);
 
   return null;
@@ -144,7 +175,7 @@ function DeviceMarker({
 }) {
   const markerRef = useRef<L.Marker | null>(null);
   const status = getDeviceStatus(device.lastSeenAt);
-  const icon = useMemo(() => createIcon(statusColor(status), active), [status, active]);
+  const icon = useMemo(() => createIcon(statusColor(status)), [status]);
   const loc = device.latestLocation!;
   const model = deviceModelLabel(device);
   const battery = formatBattery(
@@ -161,8 +192,14 @@ function DeviceMarker({
   useEffect(() => {
     const marker = markerRef.current;
     if (!marker) return;
-    const pin = marker.getElement()?.querySelector(".spgps-pin");
-    pin?.classList.toggle("is-active", active);
+    const apply = () => {
+      const pin = marker.getElement()?.querySelector(".spgps-pin");
+      pin?.classList.toggle("is-active", active);
+    };
+    apply();
+    // Icon/status rebuild replaces the pin DOM — re-apply on next frame.
+    const raf = window.requestAnimationFrame(apply);
+    return () => window.cancelAnimationFrame(raf);
   }, [active, status, icon]);
 
   useEffect(() => {

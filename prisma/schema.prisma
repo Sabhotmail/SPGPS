@@ -86,13 +86,32 @@ model Device {
   licenseActive        Boolean?  @map("license_active")
   licenseExpiresAt     DateTime? @map("license_expires_at")
   detailsFetchedAt     DateTime? @map("details_fetched_at")
+  /// Denormalized latest GPS point (kept in sync by poll/backfill)
+  lastLatitude         Decimal?  @map("last_latitude") @db.Decimal(10, 7)
+  lastLongitude        Decimal?  @map("last_longitude") @db.Decimal(10, 7)
+  lastAccuracy         Decimal?  @map("last_accuracy") @db.Decimal(10, 2)
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
   groups           GroupDevice[]
   locationRecords  LocationRecord[]
+  locationDayStats LocationDayStat[]
 
   @@map("devices")
+}
+
+/// Per-device calendar-day point counts (APP_TIMEZONE). Powers available-dates API.
+model LocationDayStat {
+  deviceId   String   @map("device_id")
+  /// Calendar date in APP_TIMEZONE (stored as date, no time)
+  day        DateTime @db.Date
+  pointCount Int      @map("point_count")
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@id([deviceId, day])
+  @@index([deviceId, day(sort: Desc)])
+  @@map("location_day_stats")
 }
 
 model GroupDevice {

@@ -20,6 +20,10 @@ import {
 } from "./client";
 import type { ScalefusionDeviceDetails } from "./types";
 import { setRateLimitMode } from "./rate-limiter";
+import {
+  refreshLocationDayStats,
+  upsertDeviceLatestLocation,
+} from "../location-maintenance";
 
 export { buildBackfillDates } from "../app-timezone";
 
@@ -57,6 +61,24 @@ async function insertLocations(
     });
     added += result.count;
   }
+
+  const latest = rows.reduce((a, b) =>
+    b.recordedAt.getTime() >= a.recordedAt.getTime() ? b : a
+  );
+  await upsertDeviceLatestLocation(deviceId, {
+    latitude: latest.latitude,
+    longitude: latest.longitude,
+    accuracy: latest.accuracy,
+    recordedAt: latest.recordedAt,
+  });
+
+  const times = rows.map((r) => r.recordedAt.getTime());
+  await refreshLocationDayStats(
+    deviceId,
+    new Date(Math.min(...times)),
+    new Date(Math.max(...times))
+  );
+
   return added;
 }
 
@@ -88,19 +110,11 @@ export async function fetchLocationsForDevice(options: {
   const locations = await fetchDeviceLocations(sfId, date);
   const recordsAdded = await insertLocations(device.id, locations, fetchedAt);
 
-  let lastSeenAt: Date | null = device.lastSeenAt;
-  if (locations.length > 0) {
-    const latest = locations.reduce((a, b) => {
-      const ta = parseRecordedAt(a).getTime();
-      const tb = parseRecordedAt(b).getTime();
-      return tb >= ta ? b : a;
-    });
-    lastSeenAt = parseRecordedAt(latest);
-    await prisma.device.update({
-      where: { id: device.id },
-      data: { lastSeenAt },
-    });
-  }
+  // insertLocations already upserts latest lat/lng + day stats
+  const refreshed = await prisma.device.findUnique({
+    where: { id: device.id },
+    select: { lastSeenAt: true },
+  });
 
   await prisma.syncLog.create({
     data: {
@@ -115,7 +129,7 @@ export async function fetchLocationsForDevice(options: {
     recordsAdded,
     apiCount: locations.length,
     date,
-    lastSeenAt: lastSeenAt?.toISOString() ?? null,
+    lastSeenAt: refreshed?.lastSeenAt?.toISOString() ?? null,
     deviceName: device.employeeName ?? device.deviceName,
   };
 }
@@ -307,7 +321,15 @@ export async function pollLocationsFromScalefusion(): Promise<{
     recordedAt: Date;
     fetchedAt: Date;
   }[] = [];
-  const lastSeenByDevice = new Map<string, Date>();
+  const latestByDevice = new Map<
+    string,
+    {
+      latitude: Prisma.Decimal;
+      longitude: Prisma.Decimal;
+      accuracy: Prisma.Decimal | null;
+      recordedAt: Date;
+    }
+  >();
 
   for (const sf of sfDevices) {
     const location = extractLocation(sf);
@@ -320,18 +342,26 @@ export async function pollLocationsFromScalefusion(): Promise<{
     if (!device || !device.isActive) continue;
 
     const recordedAt = parseRecordedAt(location);
+    const latitude = new Prisma.Decimal(location.latitude);
+    const longitude = new Prisma.Decimal(location.longitude);
+    const accuracy =
+      location.accuracy != null
+        ? new Prisma.Decimal(location.accuracy)
+        : null;
     rows.push({
       deviceId: device.id,
-      latitude: new Prisma.Decimal(location.latitude),
-      longitude: new Prisma.Decimal(location.longitude),
-      accuracy:
-        location.accuracy != null
-          ? new Prisma.Decimal(location.accuracy)
-          : null,
+      latitude,
+      longitude,
+      accuracy,
       recordedAt,
       fetchedAt,
     });
-    lastSeenByDevice.set(device.id, recordedAt);
+    latestByDevice.set(device.id, {
+      latitude,
+      longitude,
+      accuracy,
+      recordedAt,
+    });
   }
 
   let recordsAdded = 0;
@@ -343,11 +373,13 @@ export async function pollLocationsFromScalefusion(): Promise<{
     recordsAdded = result.count;
   }
 
-  for (const [deviceId, recordedAt] of lastSeenByDevice) {
-    await prisma.device.update({
-      where: { id: deviceId },
-      data: { lastSeenAt: recordedAt },
-    });
+  for (const [deviceId, latest] of latestByDevice) {
+    await upsertDeviceLatestLocation(deviceId, latest);
+    await refreshLocationDayStats(
+      deviceId,
+      latest.recordedAt,
+      latest.recordedAt
+    );
   }
 
   await prisma.syncLog.create({
@@ -358,7 +390,7 @@ export async function pollLocationsFromScalefusion(): Promise<{
     },
   });
 
-  return { recordsAdded, devicesUpdated: lastSeenByDevice.size };
+  return { recordsAdded, devicesUpdated: latestByDevice.size };
 }
 
 export type BackfillOptions = {

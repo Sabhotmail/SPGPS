@@ -82,6 +82,20 @@ Concurrency เริ่มต้น 8 — poll ปกติยังใช้�
 
 ใน Admin → อุปกรณ์ มีปุ่ม **Backfill 1 วัน** สำหรับดึงสั้นๆ จาก UI
 
+### Prune ประวัติเก่า (optional)
+
+ตาราง `location_records` โตเร็ว — ลบจุดที่เก่ากว่า N วันได้เมื่อต้องการ:
+
+```bash
+# ดูจำนวนที่จะลบ
+npm run worker:prune -- --days=365 --dry-run
+
+# ลบจริง (ขั้นต่ำ 30 วัน)
+npm run worker:prune -- --days=365
+```
+
+หรือตั้ง `LOCATION_RETENTION_DAYS=365` ใน `.env` แล้วรัน `npm run worker:prune`
+
 ### Sync ครั้งแรก
 
 1. Login เป็น Admin
