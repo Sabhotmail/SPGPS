@@ -11,6 +11,7 @@ import {
   Smartphone,
   Users,
   FolderKanban,
+  KeyRound,
   LogOut,
   PanelLeftClose,
   PanelLeft,
@@ -45,6 +46,7 @@ const adminLinks = [
   { href: "/admin/devices", label: "อุปกรณ์", icon: Smartphone },
   { href: "/admin/groups", label: "กลุ่ม", icon: FolderKanban },
   { href: "/admin/users", label: "ผู้ใช้", icon: Users },
+  { href: "/admin/mobile", label: "แอพมือถือ", icon: KeyRound },
 ];
 
 function NavLink({

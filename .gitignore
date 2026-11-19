@@ -16,3 +16,10 @@ tsconfig.tsbuildinfo
 .oil-ui/
 .superpowers/
 skills-lock.json
+
+# Android
+android/.gradle/
+android/local.properties
+android/**/build/
+android/*.iml
+android/.idea/

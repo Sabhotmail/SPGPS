@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="spgps_primary">#0F766E</color>
+    <color name="spgps_primary_dark">#115E59</color>
+    <color name="spgps_on_primary">#FFFFFF</color>
+    <color name="spgps_bg">#F4F7F6</color>
+    <color name="spgps_surface">#FFFFFF</color>
+    <color name="spgps_text">#0F172A</color>
+    <color name="spgps_muted">#64748B</color>
+    <color name="spgps_error">#B91C1C</color>
+</resources>

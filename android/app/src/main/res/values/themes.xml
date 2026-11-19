@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.SPGPS" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/spgps_primary</item>
+        <item name="colorPrimaryVariant">@color/spgps_primary_dark</item>
+        <item name="colorOnPrimary">@color/spgps_on_primary</item>
+        <item name="android:statusBarColor">@color/spgps_primary_dark</item>
+        <item name="android:navigationBarColor">@color/spgps_bg</item>
+        <item name="android:windowBackground">@color/spgps_bg</item>
+    </style>
+</resources>

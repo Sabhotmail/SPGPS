@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SPGPS</string>
+    <string name="action_settings">ตั้งค่า</string>
+    <string name="action_retry">ลองใหม่</string>
+    <string name="action_save">บันทึก</string>
+    <string name="action_test">ทดสอบการเชื่อมต่อ</string>
+    <string name="action_unlock">ปลดล็อก</string>
+    <string name="pin_title">รหัสปลดล็อกตั้งค่า</string>
+    <string name="pin_hint">รหัส 6 หลักจากหน้า Admin → แอพมือถือ</string>
+    <string name="pin_error">รหัสไม่ถูกต้องหรือหมดอายุ</string>
+    <string name="settings_title">ตั้งค่าเซิร์ฟเวอร์</string>
+    <string name="settings_url_hint">เช่น http://192.168.1.10:3000</string>
+    <string name="settings_url_label">Base URL</string>
+    <string name="settings_saved">บันทึกแล้ว</string>
+    <string name="settings_url_required">กรุณากรอก URL</string>
+    <string name="settings_url_invalid">รูปแบบ URL ไม่ถูกต้อง</string>
+    <string name="test_ok">เชื่อมต่อสำเร็จ (HTTP %1$d)</string>
+    <string name="test_fail">เชื่อมต่อไม่สำเร็จ: %1$s</string>
+    <string name="offline_title">โหลดไม่สำเร็จ</string>
+    <string name="offline_message">ตรวจสอบเครือข่ายหรือที่อยู่เซิร์ฟเวอร์</string>
+    <string name="first_run_help">ครั้งแรก: ตั้งค่าที่อยู่เซิร์ฟเวอร์ SPGPS ก่อนใช้งาน</string>
+</resources>

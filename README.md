@@ -9,6 +9,7 @@
 - NextAuth.js (Credentials)
 - shadcn/ui + Tailwind CSS
 - Leaflet + OpenStreetMap
+- Android WebView client (`android/` — see [android/README.md](android/README.md))
 
 ## Quick Start
 
