@@ -20,4 +20,5 @@
     <string name="offline_title">โหลดไม่สำเร็จ</string>
     <string name="offline_message">ตรวจสอบเครือข่ายหรือที่อยู่เซิร์ฟเวอร์</string>
     <string name="first_run_help">ครั้งแรก: ตั้งค่าที่อยู่เซิร์ฟเวอร์ SPGPS ก่อนใช้งาน</string>
+    <string name="external_open_failed">เปิดลิงก์ภายนอกไม่สำเร็จ</string>
 </resources>

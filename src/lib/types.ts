@@ -77,14 +77,29 @@ export function formatConnectionStatus(
   return status;
 }
 
+function isSpgpsAndroidApp(): boolean {
+  return (
+    typeof navigator !== "undefined" &&
+    /SPGPSAndroid/i.test(navigator.userAgent)
+  );
+}
+
 /** Open Google Maps centered on a lat/lng pin. */
 export function googleMapsViewUrl(latitude: number, longitude: number): string {
+  // Android WebView: use geo: so the app can hand off to a maps app
+  // (https://maps often redirects to intent:// → ERR_UNKNOWN_URL_SCHEME).
+  if (isSpgpsAndroidApp()) {
+    return `geo:${latitude},${longitude}?q=${latitude},${longitude}`;
+  }
   const q = `${latitude},${longitude}`;
   return `https://www.google.com/maps?q=${encodeURIComponent(q)}`;
 }
 
 /** Google Maps directions to a lat/lng destination. */
 export function googleMapsNavUrl(latitude: number, longitude: number): string {
+  if (isSpgpsAndroidApp()) {
+    return `google.navigation:q=${latitude},${longitude}`;
+  }
   const dest = `${latitude},${longitude}`;
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
 }
