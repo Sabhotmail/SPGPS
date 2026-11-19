@@ -4,6 +4,18 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
+  ChevronDown,
+  ChevronUp,
+  Clock3,
+  History as HistoryIcon,
+  List,
+  MapPinned,
+  Navigation,
+  Route,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
+import {
   DeviceLocation,
   HistoryLocation,
   StopPoint,
@@ -23,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { DeviceSearchSelect } from "@/components/ui/device-search-select";
 import { DatePickerWithMarkers } from "@/components/ui/date-picker-with-markers";
+import { FadeIn } from "@/components/motion";
 import { cn } from "@/lib/utils";
 
 const HistoryMap = dynamic(
@@ -30,7 +43,7 @@ const HistoryMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-full bg-background" aria-label="กำลังโหลดแผนที่" />
+      <div className="h-full bg-muted/40" aria-label="กำลังโหลดแผนที่" />
     ),
   }
 );
@@ -51,6 +64,8 @@ export default function HistoryClient() {
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [showCoverage, setShowCoverage] = useState(true);
   const [stopsOpen, setStopsOpen] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(!initialDeviceId);
+  const [scrubDetailsOpen, setScrubDetailsOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/devices")
@@ -107,6 +122,7 @@ export default function HistoryClient() {
         const locs = (data.locations ?? []) as HistoryLocation[];
         setSliderIndex(Math.max(0, locs.length - 1));
         setSelectedStopId(null);
+        setControlsOpen(false);
       }
     } finally {
       setLoading(false);
@@ -158,202 +174,568 @@ export default function HistoryClient() {
     setStopsOpen(false);
   }
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <header className="relative z-[1100] shrink-0 border-b border-border/70 bg-background/95 px-3 py-3 backdrop-blur-sm sm:px-5 sm:py-4">
-        <div className="flex flex-wrap items-end gap-2 sm:gap-3">
-          <div className="min-w-0 flex-1 basis-full sm:basis-[220px]">
-            <p className="mb-1 text-[11px] text-muted-foreground">พนักงาน</p>
-            <DeviceSearchSelect
-              devices={deviceOptions}
-              value={deviceId}
-              onChange={setDeviceId}
-            />
-          </div>
-          <div className="min-w-0 flex-1 sm:w-[170px] sm:flex-none">
-            <p className="mb-1 text-[11px] text-muted-foreground">วันที่</p>
-            <DatePickerWithMarkers
-              value={date}
-              onChange={setDate}
-              datesWithData={datesWithData}
-              disabled={!deviceId}
-            />
-          </div>
+  const summaryText = locations.length > 0
+    ? `${locations.length} จุด · หยุด ${stops.length} · ${coverage ? formatCoverageArea(coverage.areaSqMeters) : "—"}`
+    : deviceId
+      ? pointCountForDate
+        ? `มี ${pointCountForDate} จุดในฐานข้อมูล`
+        : "ยังไม่มีจุดในวันที่นี้"
+      : "เลือกพนักงานเพื่อเริ่ม";
+
+  const selectFields = (
+    <div className="space-y-2">
+      <div>
+        <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+          พนักงาน
+        </p>
+        <DeviceSearchSelect
+          devices={deviceOptions}
+          value={deviceId}
+          onChange={setDeviceId}
+        />
+      </div>
+      <div className="flex gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+            วันที่
+          </p>
+          <DatePickerWithMarkers
+            value={date}
+            onChange={setDate}
+            datesWithData={datesWithData}
+            disabled={!deviceId}
+          />
+        </div>
+        <div className="flex shrink-0 flex-col justify-end">
           <Button
-            onClick={fetchHistory}
+            onClick={() => void fetchHistory()}
             disabled={!deviceId || loading}
-            className="h-9 shrink-0 px-4 sm:h-8 sm:flex-none"
+            className="h-10 cursor-pointer rounded-xl px-4"
           >
             {loading ? "..." : "โหลด"}
           </Button>
-          <div className="ml-auto hidden min-w-0 text-right md:block">
-            <p className="truncate text-[15px] font-medium tracking-tight">
-              {selectedDevice
-                ? selectedDevice.employeeName || selectedDevice.deviceName
-                : "ประวัติเส้นทาง"}
-            </p>
-            <p className="text-[11px] tabular-nums text-muted-foreground">
-              {locations.length > 0
-                ? `${locations.length} จุด · หยุด ${stops.length} แห่ง · ครอบคลุม ${coverage ? formatCoverageArea(coverage.areaSqMeters) : "—"} · ${date}`
-                : deviceId
-                  ? pointCountForDate
-                    ? `มี ${pointCountForDate} จุดในฐานข้อมูล · กดโหลด`
-                    : "ยังไม่มีจุดในวันที่นี้"
-                  : "เลือกพนักงานเพื่อดูเส้นทาง"}
-            </p>
-          </div>
         </div>
-        {locations.length > 0 && (
-          <p className="mt-2 text-[11px] tabular-nums text-muted-foreground md:hidden">
-            {locations.length} จุด · หยุด {stops.length} ·{" "}
+      </div>
+    </div>
+  );
+
+  const statsBlock = (
+    <>
+      <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-muted/70 p-1">
+        <div className="rounded-xl px-2 py-2 text-center">
+          <p className="text-[10px] text-muted-foreground">จุด</p>
+          <p className="mt-0.5 font-semibold tabular-nums">
+            {locations.length || "—"}
+          </p>
+        </div>
+        <div className="rounded-xl px-2 py-2 text-center">
+          <p className="text-[10px] text-muted-foreground">หยุด</p>
+          <p className="mt-0.5 font-semibold tabular-nums">
+            {locations.length ? stops.length : "—"}
+          </p>
+        </div>
+        <div className="rounded-xl px-2 py-2 text-center">
+          <p className="text-[10px] text-muted-foreground">พื้นที่</p>
+          <p className="mt-0.5 text-[12px] font-semibold tabular-nums">
             {coverage ? formatCoverageArea(coverage.areaSqMeters) : "—"}
           </p>
-        )}
-      </header>
+        </div>
+      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">{summaryText}</p>
+    </>
+  );
 
-      <div className="relative flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain lg:flex-row lg:items-stretch lg:overflow-hidden">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:overflow-hidden">
-          <div className="relative h-[min(52vh,420px)] min-h-[280px] shrink-0 overflow-hidden border-b border-border/70 bg-muted sm:h-[min(50vh,480px)] lg:h-auto lg:min-h-0 lg:flex-1">
-            <HistoryMap
-              locations={locations}
-              highlightIndex={sliderIndex}
-              stops={stops}
-              selectedStopId={selectedStopId}
-              onSelectStop={selectStop}
-              speedLabel={speedKmh}
-              coverage={coverage}
-              showCoverage={showCoverage}
-              layoutKey={`${deviceId}:${date}:panel=${locations.length > 0 ? 1 : 0}:aside=${deviceId ? 1 : 0}`}
-            />
-
-            {locations.length > 0 && coverage && (
-              <div className="absolute bottom-2 left-2 z-[1000] flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-1.5 sm:bottom-3 sm:left-3 sm:gap-2">
-                <div className="border border-border/70 bg-background/95 px-2 py-1 text-[11px] backdrop-blur-sm sm:px-2.5 sm:py-1.5">
-                  <span className="inline-block size-2 rounded-sm bg-primary/40 align-middle" />{" "}
-                  <span className="font-medium tabular-nums text-foreground">
-                    {formatCoverageArea(coverage.areaSqMeters)}
-                  </span>
-                  <span className="hidden text-muted-foreground sm:inline">
-                    {" "}
-                    (รัศมี {coverage.bufferMeters} ม.)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowCoverage((v) => !v)}
-                  className="min-h-8 border border-border/70 bg-background/95 px-2.5 py-1 text-[11px] backdrop-blur-sm transition-colors hover:bg-muted"
+  const stopsList = (
+    <div className="min-h-0 flex-1 overflow-y-auto p-2">
+      {loading ? (
+        <p className="px-3 py-8 text-[12px] text-muted-foreground">
+          กำลังโหลด...
+        </p>
+      ) : locations.length === 0 ? (
+        <p className="px-3 py-8 text-[12px] text-muted-foreground">
+          ยังไม่มีจุดในวันนี้
+        </p>
+      ) : stops.length === 0 ? (
+        <p className="px-3 py-8 text-[12px] text-muted-foreground">
+          ไม่พบจุดหยุดตามเงื่อนไข
+        </p>
+      ) : (
+        <ul className="space-y-1.5">
+          {stops.map((stop, index) => {
+            const active = selectedStopId === stop.id;
+            return (
+              <li key={stop.id}>
+                <div
+                  className={cn(
+                    "rounded-2xl px-3 py-3 transition-colors",
+                    active
+                      ? "bg-primary/12 ring-1 ring-primary/30"
+                      : "hover:bg-muted/80"
+                  )}
                 >
-                  {showCoverage ? "ซ่อน" : "พื้นที่"}
-                </button>
-              </div>
-            )}
+                  <button
+                    type="button"
+                    onClick={() => selectStop(stop)}
+                    className="w-full cursor-pointer text-left"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <span
+                        className={cn(
+                          "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-foreground"
+                        )}
+                      >
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 text-[13px] font-semibold">
+                          <Clock3 className="size-3.5 text-primary" />
+                          {formatDurationMinutes(stop.durationMinutes)}
+                        </p>
+                        <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
+                          {formatDateTime(stop.startAt)}
+                        </p>
+                        <p className="text-[11px] tabular-nums text-muted-foreground">
+                          → {formatDateTime(stop.endAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                  <div className="mt-2 ml-8 flex flex-wrap gap-3">
+                    <a
+                      href={googleMapsViewUrl(stop.latitude, stop.longitude)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-medium text-primary underline-offset-2 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      พิกัด
+                    </a>
+                    <a
+                      href={googleMapsNavUrl(stop.latitude, stop.longitude)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-medium text-primary underline-offset-2 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      นำทาง
+                    </a>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
 
-            {!deviceId && (
-              <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center px-3">
-                <p className="border border-border/70 bg-background/95 px-3 py-1.5 text-sm text-muted-foreground backdrop-blur-sm">
-                  ค้นหาและเลือกพนักงานด้านบน
-                </p>
-              </div>
-            )}
+  return (
+    <div className="relative h-full min-h-0 flex-1 overflow-hidden animate-fade-up md:rounded-[1.25rem]">
+      {/* Map stage */}
+      <div className="absolute inset-0 overflow-hidden md:rounded-[1.25rem]">
+        <HistoryMap
+          locations={locations}
+          highlightIndex={sliderIndex}
+          stops={stops}
+          selectedStopId={selectedStopId}
+          onSelectStop={selectStop}
+          speedLabel={speedKmh}
+          coverage={coverage}
+          showCoverage={showCoverage}
+          layoutKey={`${deviceId}:${date}:panel=${locations.length > 0 ? 1 : 0}`}
+        />
+      </div>
 
-            {deviceId && !loading && locations.length === 0 && (
-              <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center px-3">
-                <p className="border border-border/70 bg-background/95 px-3 py-1.5 text-center text-sm text-muted-foreground backdrop-blur-sm">
-                  ไม่พบข้อมูลในวันที่ {date}
-                  {Object.keys(datesWithData).length === 0
-                    ? " — รอ backfill หรือ poll ก่อน"
-                    : ""}
-                </p>
-              </div>
+      {/* Mobile compact top bar — keep map visible */}
+      <div
+        className="pointer-events-none absolute inset-x-2 top-2 z-[1100] md:hidden"
+        style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
+      >
+        <div className="pointer-events-auto glass-panel rounded-2xl p-2.5 shadow-[0_16px_40px_-20px_rgba(15,23,42,0.5)]">
+          <div className="flex items-center gap-2">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <HistoryIcon className="size-3.5" />
+            </div>
+            <button
+              type="button"
+              className="min-w-0 flex-1 cursor-pointer text-left"
+              onClick={() => setControlsOpen((v) => !v)}
+              aria-expanded={controlsOpen}
+            >
+              <p className="truncate text-[13px] font-semibold tracking-tight">
+                {selectedDevice
+                  ? selectedDevice.employeeName || selectedDevice.deviceName
+                  : "เลือกพนักงาน"}
+              </p>
+              <p className="truncate text-[11px] tabular-nums text-muted-foreground">
+                {date} · {summaryText}
+              </p>
+            </button>
+            {deviceId && locations.length > 0 && (
+              <>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="size-8 shrink-0 cursor-pointer rounded-xl"
+                  onClick={() => setStopsOpen((v) => !v)}
+                  aria-label={`จุดหยุด ${stops.length}`}
+                  title="จุดหยุด"
+                >
+                  <List className="size-3.5" />
+                </Button>
+                {coverage && (
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    className={cn(
+                      "size-8 shrink-0 cursor-pointer rounded-xl",
+                      showCoverage && "bg-primary/12 text-primary"
+                    )}
+                    onClick={() => setShowCoverage((v) => !v)}
+                    aria-label={showCoverage ? "ซ่อนพื้นที่" : "แสดงพื้นที่"}
+                    title={showCoverage ? "ซ่อนพื้นที่" : "แสดงพื้นที่"}
+                  >
+                    <Route className="size-3.5" />
+                  </Button>
+                )}
+              </>
+            )}
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="outline"
+              className="size-8 shrink-0 cursor-pointer rounded-xl"
+              onClick={() => setControlsOpen((v) => !v)}
+              aria-expanded={controlsOpen}
+              aria-label="เลือกพนักงานและวันที่"
+            >
+              {controlsOpen ? (
+                <ChevronUp className="size-3.5" />
+              ) : (
+                <SlidersHorizontal className="size-3.5" />
+              )}
+            </Button>
+          </div>
+          {controlsOpen && (
+            <div className="mt-2.5 border-t border-border/50 pt-2.5">
+              {selectFields}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop top controls */}
+      <div className="pointer-events-none absolute inset-x-auto left-3 top-3 z-[1100] hidden w-[380px] flex-col gap-2 md:flex">
+        <div className="pointer-events-auto glass-panel rounded-[1.35rem] p-4 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.55)]">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">
+                Playback
+              </p>
+              <h1 className="mt-1 font-brand text-lg font-semibold tracking-tight">
+                ประวัติเส้นทาง
+              </h1>
+              <p className="mt-1 truncate text-[12px] text-muted-foreground">
+                {selectedDevice
+                  ? selectedDevice.employeeName || selectedDevice.deviceName
+                  : "ยังไม่ได้เลือกพนักงาน"}
+                {" · "}
+                <span className="tabular-nums">{date}</span>
+              </p>
+            </div>
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <HistoryIcon className="size-4" />
+            </div>
+          </div>
+          {selectFields}
+          {statsBlock}
+        </div>
+
+        {deviceId && (
+          <div className="pointer-events-auto flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 cursor-pointer gap-1.5 rounded-full border-border/60 bg-card/90 shadow-sm backdrop-blur-md"
+              onClick={() => setStopsOpen((v) => !v)}
+            >
+              <List className="size-3.5" />
+              จุดหยุด
+              {stops.length > 0 && (
+                <span className="tabular-nums opacity-80">({stops.length})</span>
+              )}
+            </Button>
+            {coverage && locations.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 cursor-pointer gap-1.5 rounded-full border-border/60 bg-card/90 shadow-sm backdrop-blur-md"
+                onClick={() => setShowCoverage((v) => !v)}
+              >
+                <Route className="size-3.5" />
+                {showCoverage ? "ซ่อนพื้นที่" : "แสดงพื้นที่"}
+              </Button>
             )}
           </div>
+        )}
+      </div>
 
-          <div className="relative z-0 shrink-0 overflow-hidden border-b border-border/70 bg-background px-3 py-3 sm:px-5 sm:py-4 lg:border-b-0">
+      {/* Empty / hint overlays */}
+      {!deviceId && (
+        <div className="pointer-events-none absolute inset-x-0 top-[40%] z-[1000] flex justify-center px-4 md:left-[420px]">
+          <p className="rounded-2xl border border-border/60 bg-card/95 px-4 py-2.5 text-sm text-muted-foreground shadow-lg backdrop-blur-md">
+            เลือกพนักงานเพื่อดูเส้นทางย้อนหลัง
+          </p>
+        </div>
+      )}
+      {deviceId && !loading && locations.length === 0 && (
+        <div className="pointer-events-none absolute inset-x-0 top-[40%] z-[1000] flex justify-center px-4 md:left-[420px]">
+          <p className="rounded-2xl border border-border/60 bg-card/95 px-4 py-2.5 text-center text-sm text-muted-foreground shadow-lg backdrop-blur-md">
+            ไม่พบข้อมูลในวันที่ {date}
+            {Object.keys(datesWithData).length === 0
+              ? " — รอ backfill หรือ poll ก่อน"
+              : ""}
+          </p>
+        </div>
+      )}
+
+      {/* Desktop stops drawer */}
+      {stopsOpen && deviceId && (
+        <div className="pointer-events-none absolute inset-y-3 right-3 z-[1100] hidden w-[320px] md:block">
+          <FadeIn className="pointer-events-auto glass-panel flex h-full max-h-full flex-col overflow-hidden rounded-[1.35rem] shadow-[0_20px_60px_-24px_rgba(15,23,42,0.55)]">
+            <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold">จุดที่หยุด</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  รัศมี 60 ม. ≥ 5 นาที
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="cursor-pointer rounded-full"
+                onClick={() => setStopsOpen(false)}
+                aria-label="ปิดรายการหยุด"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+            {stopsList}
+          </FadeIn>
+        </div>
+      )}
+
+      {/* Mobile stops sheet */}
+      {stopsOpen && deviceId && (
+        <div className="fixed inset-0 z-[1150] md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-pointer bg-[var(--scrim)]"
+            aria-label="ปิดจุดหยุด"
+            onClick={() => setStopsOpen(false)}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 flex max-h-[min(70dvh,560px)] flex-col overflow-hidden rounded-t-[1.5rem] border-t border-border/70 bg-card shadow-2xl"
+            style={{
+              paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))",
+            }}
+          >
+            <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold">จุดที่หยุด</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  รัศมี 60 ม. ≥ 5 นาที
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="cursor-pointer rounded-full"
+                onClick={() => setStopsOpen(false)}
+                aria-label="ปิด"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+            {stopsList}
+          </div>
+        </div>
+      )}
+
+      {/* Playback scrubber */}
+      <div className="pointer-events-none absolute inset-x-2 bottom-2 z-[1100] flex justify-center sm:inset-x-3 sm:bottom-3 md:left-[408px] md:right-3 md:justify-start">
+        <FadeIn className="pointer-events-auto w-full max-w-2xl">
+          <div className="glass-panel rounded-2xl px-3 py-2.5 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.55)] sm:rounded-[1.35rem] sm:px-4 sm:py-3.5">
             {locations.length > 0 && currentPoint ? (
               <>
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[12px] tabular-nums text-muted-foreground sm:text-[13px]">
+                <div className="mb-1.5 flex items-center justify-between gap-2 sm:mb-2">
+                  <p className="min-w-0 truncate text-[12px] tabular-nums text-muted-foreground">
                     จุดที่{" "}
-                    <span className="font-medium text-foreground">
+                    <span className="font-semibold text-foreground">
                       {sliderIndex + 1}
                     </span>{" "}
                     / {locations.length}
                     {sliderIndex === locations.length - 1 && (
-                      <span className="ml-2 text-[11px] text-foreground">
+                      <span className="ml-1.5 text-[11px] font-medium text-primary">
                         · ล่าสุด
                       </span>
                     )}
                   </p>
-                  <p className="text-[11px] tabular-nums text-muted-foreground sm:text-[13px]">
-                    {formatDateTime(currentPoint.recordedAt)}
-                  </p>
-                </div>
-                <div className="relative z-0 my-1 overflow-hidden py-1">
-                  <Slider
-                    min={0}
-                    max={Math.max(0, locations.length - 1)}
-                    value={[sliderIndex]}
-                    orientation="horizontal"
-                    className="w-full"
-                    onValueChange={(v) => {
-                      setSelectedStopId(null);
-                      setSliderIndex(Array.isArray(v) ? (v[0] ?? 0) : v);
-                    }}
-                  />
-                </div>
-                <dl className="mt-2.5 grid grid-cols-3 gap-2 sm:mt-3 sm:gap-4">
-                  <div>
-                    <dt className="text-[10px] text-muted-foreground sm:text-[11px]">
-                      Lat
-                    </dt>
-                    <dd className="mt-0.5 text-[11px] tabular-nums sm:text-[13px]">
-                      {currentPoint.latitude.toFixed(5)}
-                    </dd>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <p className="hidden text-[12px] tabular-nums text-muted-foreground sm:block">
+                      {formatDateTime(currentPoint.recordedAt)}
+                    </p>
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      className="size-7 cursor-pointer rounded-lg md:hidden"
+                      onClick={() => setScrubDetailsOpen((v) => !v)}
+                      aria-expanded={scrubDetailsOpen}
+                      aria-label="รายละเอียดจุด"
+                    >
+                      {scrubDetailsOpen ? (
+                        <ChevronDown className="size-3.5" />
+                      ) : (
+                        <ChevronUp className="size-3.5" />
+                      )}
+                    </Button>
                   </div>
-                  <div>
-                    <dt className="text-[10px] text-muted-foreground sm:text-[11px]">
-                      Lng
-                    </dt>
-                    <dd className="mt-0.5 text-[11px] tabular-nums sm:text-[13px]">
-                      {currentPoint.longitude.toFixed(5)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[10px] text-muted-foreground sm:text-[11px]">
-                      ความเร็ว
-                    </dt>
-                    <dd className="mt-0.5 text-[11px] tabular-nums sm:text-[13px]">
-                      {speedKmh ? `${speedKmh} km/h` : "—"}
-                    </dd>
-                  </div>
-                </dl>
-                <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 sm:mt-3 sm:gap-3">
-                  <a
-                    href={googleMapsViewUrl(
-                      currentPoint.latitude,
-                      currentPoint.longitude
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
-                  >
-                    เปิดพิกัด
-                  </a>
-                  <a
-                    href={googleMapsNavUrl(
-                      currentPoint.latitude,
-                      currentPoint.longitude
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[12px] font-medium text-foreground underline-offset-4 hover:underline"
-                  >
-                    นำทาง
-                  </a>
                 </div>
+                <p className="mb-1.5 text-[11px] tabular-nums text-muted-foreground sm:hidden">
+                  {formatDateTime(currentPoint.recordedAt)}
+                  {speedKmh ? ` · ${speedKmh} km/h` : ""}
+                </p>
+                <Slider
+                  min={0}
+                  max={Math.max(0, locations.length - 1)}
+                  value={[sliderIndex]}
+                  orientation="horizontal"
+                  className="w-full"
+                  onValueChange={(v) => {
+                    setSelectedStopId(null);
+                    setSliderIndex(Array.isArray(v) ? (v[0] ?? 0) : v);
+                  }}
+                />
+                <div
+                  className={cn(
+                    "mt-2.5 space-y-2.5",
+                    scrubDetailsOpen ? "block" : "hidden",
+                    "md:mt-3 md:block md:space-y-3"
+                  )}
+                >
+                  <dl className="grid grid-cols-3 gap-1.5 sm:gap-3">
+                    <div className="rounded-xl bg-muted/60 px-2 py-1.5 sm:px-2.5 sm:py-2">
+                      <dt className="text-[10px] text-muted-foreground">Lat</dt>
+                      <dd className="mt-0.5 truncate text-[11px] font-semibold tabular-nums sm:text-[12px]">
+                        {currentPoint.latitude.toFixed(5)}
+                      </dd>
+                    </div>
+                    <div className="rounded-xl bg-muted/60 px-2 py-1.5 sm:px-2.5 sm:py-2">
+                      <dt className="text-[10px] text-muted-foreground">Lng</dt>
+                      <dd className="mt-0.5 truncate text-[11px] font-semibold tabular-nums sm:text-[12px]">
+                        {currentPoint.longitude.toFixed(5)}
+                      </dd>
+                    </div>
+                    <div className="rounded-xl bg-muted/60 px-2 py-1.5 sm:px-2.5 sm:py-2">
+                      <dt className="text-[10px] text-muted-foreground">
+                        ความเร็ว
+                      </dt>
+                      <dd className="mt-0.5 text-[11px] font-semibold tabular-nums sm:text-[12px]">
+                        {speedKmh ? `${speedKmh} km/h` : "—"}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 flex-1 cursor-pointer gap-1.5 rounded-xl sm:flex-none"
+                      render={
+                        <a
+                          href={googleMapsViewUrl(
+                            currentPoint.latitude,
+                            currentPoint.longitude
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      }
+                    >
+                      <MapPinned className="size-3.5" />
+                      พิกัด
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-8 flex-1 cursor-pointer gap-1.5 rounded-xl sm:flex-none"
+                      render={
+                        <a
+                          href={googleMapsNavUrl(
+                            currentPoint.latitude,
+                            currentPoint.longitude
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      }
+                    >
+                      <Navigation className="size-3.5" />
+                      นำทาง
+                    </Button>
+                  </div>
+                </div>
+                {/* Always-visible compact actions on mobile when details collapsed */}
+                {!scrubDetailsOpen && (
+                  <div className="mt-2 flex gap-2 md:hidden">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 flex-1 cursor-pointer gap-1.5 rounded-xl"
+                      render={
+                        <a
+                          href={googleMapsViewUrl(
+                            currentPoint.latitude,
+                            currentPoint.longitude
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      }
+                    >
+                      <MapPinned className="size-3.5" />
+                      พิกัด
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-8 flex-1 cursor-pointer gap-1.5 rounded-xl"
+                      render={
+                        <a
+                          href={googleMapsNavUrl(
+                            currentPoint.latitude,
+                            currentPoint.longitude
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      }
+                    >
+                      <Navigation className="size-3.5" />
+                      นำทาง
+                    </Button>
+                  </div>
+                )}
               </>
             ) : (
-              <p className="py-4 text-center text-[12px] text-muted-foreground sm:py-6">
+              <p className="py-2 text-center text-[12px] text-muted-foreground">
                 {deviceId
                   ? loading
                     ? "กำลังโหลดจุด..."
@@ -362,131 +744,7 @@ export default function HistoryClient() {
               </p>
             )}
           </div>
-        </div>
-
-        {deviceId ? (
-          <aside
-            className={cn(
-              "relative z-10 flex w-full shrink-0 flex-col overflow-hidden border-t border-border/70 bg-background lg:h-auto lg:max-h-none lg:w-[300px] lg:self-stretch lg:border-l lg:border-t-0",
-              stopsOpen ? "max-h-[45vh] lg:max-h-none" : "max-h-none"
-            )}
-          >
-            <button
-              type="button"
-              className="flex shrink-0 items-center justify-between border-b border-border/70 px-3 py-2.5 text-left sm:px-4 sm:py-3 lg:pointer-events-none"
-              onClick={() => setStopsOpen((v) => !v)}
-            >
-              <div>
-                <p className="text-[13px] font-medium">
-                  จุดที่หยุด
-                  {stops.length > 0 ? (
-                    <span className="ml-1.5 tabular-nums text-muted-foreground">
-                      ({stops.length})
-                    </span>
-                  ) : null}
-                </p>
-                <p className="mt-0.5 hidden text-[11px] text-muted-foreground sm:block">
-                  อยู่ในรัศมี 60 ม. ≥ 5 นาที
-                </p>
-              </div>
-              <span className="text-[11px] text-muted-foreground lg:hidden">
-                {stopsOpen ? "ซ่อน" : "ดูรายการ"}
-              </span>
-            </button>
-            <div
-              className={cn(
-                "min-h-0 flex-1 overflow-y-auto",
-                !stopsOpen && "hidden lg:block"
-              )}
-            >
-              {loading ? (
-                <p className="px-4 py-8 text-[12px] text-muted-foreground">
-                  กำลังโหลด...
-                </p>
-              ) : locations.length === 0 ? (
-                <p className="px-4 py-8 text-[12px] text-muted-foreground">
-                  ยังไม่มีจุดในวันนี้
-                </p>
-              ) : stops.length === 0 ? (
-                <p className="px-4 py-8 text-[12px] text-muted-foreground">
-                  ไม่พบจุดหยุดตามเงื่อนไขในวันนี้
-                </p>
-              ) : (
-                <ul>
-                  {stops.map((stop, index) => {
-                    const active = selectedStopId === stop.id;
-                    return (
-                      <li key={stop.id}>
-                        <div
-                          className={cn(
-                            "border-b border-border/70 px-3 py-2.5 transition-colors hover:bg-accent/60 sm:px-4 sm:py-3",
-                            active && "bg-accent/60"
-                          )}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => selectStop(stop)}
-                            className="w-full text-left hover:opacity-90"
-                          >
-                            <div className="flex items-start gap-2.5">
-                              <span
-                                className={cn(
-                                  "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-medium",
-                                  active
-                                    ? "border-foreground bg-foreground text-background"
-                                    : "border-foreground/40"
-                                )}
-                              >
-                                {index + 1}
-                              </span>
-                              <div className="min-w-0">
-                                <p className="text-[13px] font-medium">
-                                  {formatDurationMinutes(stop.durationMinutes)}
-                                </p>
-                                <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-                                  {formatDateTime(stop.startAt)}
-                                </p>
-                                <p className="text-[11px] tabular-nums text-muted-foreground">
-                                  → {formatDateTime(stop.endAt)}
-                                </p>
-                              </div>
-                            </div>
-                          </button>
-                          <div className="mt-2 ml-7 flex flex-wrap gap-3">
-                            <a
-                              href={googleMapsViewUrl(
-                                stop.latitude,
-                                stop.longitude
-                              )}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[11px] font-medium text-foreground underline-offset-2 hover:underline"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              เปิดพิกัด
-                            </a>
-                            <a
-                              href={googleMapsNavUrl(
-                                stop.latitude,
-                                stop.longitude
-                              )}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[11px] font-medium text-foreground underline-offset-2 hover:underline"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              นำทาง
-                            </a>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </aside>
-        ) : null}
+        </FadeIn>
       </div>
     </div>
   );

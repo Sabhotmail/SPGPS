@@ -3,7 +3,15 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { List, Search, X } from "lucide-react";
+import {
+  Battery,
+  History as HistoryIcon,
+  List,
+  MapPinned,
+  Navigation,
+  Search,
+  X,
+} from "lucide-react";
 import {
   DeviceLocation,
   formatBattery,
@@ -24,16 +32,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { FadeIn } from "@/components/motion";
 
 const RealtimeMap = dynamic(
   () => import("@/components/map/RealtimeMap").then((m) => m.RealtimeMap),
   {
     ssr: false,
     loading: () => (
-      <div className="h-full bg-background" aria-label="กำลังโหลดแผนที่" />
+      <div className="h-full bg-muted/40" aria-label="กำลังโหลดแผนที่" />
     ),
   }
 );
+
+type StatusFilter = "all" | "online" | "idle" | "offline";
+
+const STATUS_LABEL: Record<Exclude<StatusFilter, "all">, string> = {
+  online: "ออนไลน์",
+  idle: "ไม่เคลื่อนไหว",
+  offline: "ออฟไลน์",
+};
 
 function DeviceListPanel({
   filteredDevices,
@@ -44,11 +61,13 @@ function DeviceListPanel({
   setSearch,
   loading,
   counts,
+  statusFilter,
+  setStatusFilter,
   lastRefresh,
   selectedDeviceId,
   setSelectedDeviceId,
-  selectedDevice,
   onPickDevice,
+  compact,
 }: {
   filteredDevices: DeviceLocation[];
   groups: { id: string; name: string }[];
@@ -58,11 +77,13 @@ function DeviceListPanel({
   setSearch: (v: string) => void;
   loading: boolean;
   counts: { online: number; idle: number; offline: number };
+  statusFilter: StatusFilter;
+  setStatusFilter: (v: StatusFilter) => void;
   lastRefresh: Date | null;
   selectedDeviceId: string | null;
   setSelectedDeviceId: (id: string | null) => void;
-  selectedDevice: DeviceLocation | undefined;
   onPickDevice?: (id: string) => void;
+  compact?: boolean;
 }) {
   const activeRowRef = useRef<HTMLButtonElement>(null);
 
@@ -70,52 +91,90 @@ function DeviceListPanel({
     activeRowRef.current?.scrollIntoView({ block: "nearest" });
   }, [selectedDeviceId]);
 
+  const total =
+    counts.online + counts.idle + counts.offline;
+
   return (
-    <>
-      <header className="shrink-0 border-b px-4 py-4 pr-12 md:pr-4">
-        <h1 className="text-xl font-semibold tracking-tight">
-          ตำแหน่งปัจจุบัน
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {filteredDevices.length} อุปกรณ์
-          {lastRefresh &&
-            ` · อัปเดต ${formatDateTime(lastRefresh.toISOString())}`}
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+    <div className="flex h-full min-h-0 flex-col">
+      <header
+        className={cn(
+          "shrink-0 border-b border-border/50",
+          compact ? "px-4 pb-4 pt-5 pr-12" : "px-4 py-4"
+        )}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">
+              Live track
+            </p>
+            <h1 className="mt-1 font-brand text-lg font-semibold tracking-tight">
+              ฟลีตบนแผนที่
+            </h1>
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              <span className="font-semibold tabular-nums text-foreground">
+                {filteredDevices.length}
+              </span>
+              /{total} แสดงผล
+              {lastRefresh &&
+                ` · ${formatDateTime(lastRefresh.toISOString())}`}
+            </p>
+          </div>
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <MapPinned className="size-4" />
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-2xl bg-muted/70 p-1">
           {(
             [
               ["online", counts.online],
               ["idle", counts.idle],
               ["offline", counts.offline],
             ] as const
-          ).map(([status, count]) => (
-            <span
-              key={status}
-              className="inline-flex min-h-9 items-center gap-1.5 border border-border bg-background px-2.5 text-sm text-muted-foreground"
-            >
-              <StatusDot status={status} showLabel />
-              <span className="tabular-nums">{count}</span>
-            </span>
-          ))}
+          ).map(([status, count]) => {
+            const active = statusFilter === status;
+            return (
+              <button
+                key={status}
+                type="button"
+                onClick={() =>
+                  setStatusFilter(active ? "all" : status)
+                }
+                className={cn(
+                  "flex min-h-11 cursor-pointer flex-col items-center justify-center rounded-xl px-1 py-1.5 transition-all duration-200",
+                  active
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-pressed={active}
+              >
+                <StatusDot status={status} />
+                <span className="mt-1 text-[11px] font-semibold tabular-nums">
+                  {count}
+                </span>
+                <span className="sr-only">{STATUS_LABEL[status]}</span>
+              </button>
+            );
+          })}
         </div>
       </header>
 
-      <div className="shrink-0 space-y-2 border-b px-4 py-3">
+      <div className="shrink-0 space-y-2 border-b border-border/50 px-4 py-3">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="ค้นหา"
+            placeholder="ค้นหาชื่อหรืออุปกรณ์"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 pl-8 text-sm"
+            className="h-10 rounded-xl border-border/60 bg-background/80 pl-9 text-sm"
           />
         </div>
         <Select
           value={selectedGroup}
           onValueChange={(v) => v && setSelectedGroup(v)}
         >
-          <SelectTrigger className="!h-10 w-full text-sm">
+          <SelectTrigger className="!h-10 w-full rounded-xl border-border/60 bg-background/80 text-sm">
             <SelectValue placeholder="ทุกกลุ่ม" />
           </SelectTrigger>
           <SelectContent>
@@ -129,7 +188,7 @@ function DeviceListPanel({
         </Select>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
         {loading ? (
           <EmptyState title="กำลังโหลด" />
         ) : filteredDevices.length === 0 ? (
@@ -138,7 +197,7 @@ function DeviceListPanel({
             description="เปลี่ยนตัวกรอง หรือ sync จาก Scalefusion"
           />
         ) : (
-          <ul>
+          <ul className="space-y-1.5">
             {filteredDevices.map((d) => {
               const status = getDeviceStatus(d.lastSeenAt);
               const active = selectedDeviceId === d.id;
@@ -153,50 +212,59 @@ function DeviceListPanel({
                       onPickDevice?.(d.id);
                     }}
                     className={cn(
-                      "relative w-full border-b px-4 py-3 text-left transition-colors hover:bg-accent/60",
-                      active && "bg-accent/60"
+                      "relative w-full cursor-pointer rounded-2xl px-3 py-3 text-left transition-all duration-200",
+                      active
+                        ? "bg-primary/12 ring-1 ring-primary/30"
+                        : "hover:bg-muted/80"
                     )}
                   >
-                    {active && (
-                      <span className="absolute inset-y-2 left-0 w-0.5 origin-center rounded-full bg-primary animate-nav-in" />
-                    )}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {d.employeeName}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
+                    <div className="flex items-start gap-3">
+                      <span
+                        className={cn(
+                          "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl",
+                          status === "online" && "bg-status-online/15",
+                          status === "idle" && "bg-status-idle/15",
+                          status === "offline" && "bg-muted"
+                        )}
+                      >
+                        <StatusDot status={status} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="truncate text-sm font-semibold tracking-tight">
+                            {d.employeeName || d.deviceName}
+                          </p>
+                          {formatBattery(d.batteryPercent, d.batteryCharging) && (
+                            <span
+                              className={cn(
+                                "inline-flex shrink-0 items-center gap-0.5 text-[11px] tabular-nums",
+                                (d.batteryPercent ?? 100) <= 15
+                                  ? "text-destructive"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              <Battery className="size-3" />
+                              {formatBattery(
+                                d.batteryPercent,
+                                d.batteryCharging
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                           {d.deviceName}
                         </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] tabular-nums text-muted-foreground">
+                          {d.connectionStatus && (
+                            <span className="rounded-md bg-muted px-1.5 py-0.5 font-medium">
+                              SF {d.connectionStatus}
+                            </span>
+                          )}
+                          {d.lastSeenAt && (
+                            <span>{formatDateTime(d.lastSeenAt)}</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        <StatusDot status={status} />
-                        {formatBattery(d.batteryPercent, d.batteryCharging) && (
-                          <span
-                            className={cn(
-                              "text-xs tabular-nums",
-                              (d.batteryPercent ?? 100) <= 15
-                                ? "text-destructive"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            {formatBattery(
-                              d.batteryPercent,
-                              d.batteryCharging
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs tabular-nums text-muted-foreground">
-                      {d.connectionStatus && (
-                        <span className="rounded border px-1 py-px text-[10px]">
-                          SF {d.connectionStatus}
-                        </span>
-                      )}
-                      {d.lastSeenAt && (
-                        <span>{formatDateTime(d.lastSeenAt)}</span>
-                      )}
                     </div>
                   </button>
                 </li>
@@ -205,96 +273,115 @@ function DeviceListPanel({
           </ul>
         )}
       </div>
+    </div>
+  );
+}
 
-      {selectedDevice && (
-        <footer className="shrink-0 border-t px-4 py-3">
-          <p className="text-xs text-muted-foreground">ที่เลือก</p>
-          <p className="mt-0.5 text-sm font-medium">
-            {selectedDevice.employeeName}
-          </p>
-          <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-            {(selectedDevice.make || selectedDevice.model) && (
-              <p>
-                {[
-                  selectedDevice.make
-                    ? selectedDevice.make.charAt(0).toUpperCase() +
-                      selectedDevice.make.slice(1)
-                    : null,
-                  selectedDevice.model,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                {selectedDevice.osVersion
-                  ? ` · Android ${selectedDevice.osVersion}`
-                  : ""}
-              </p>
+function SelectedDeviceCard({
+  device,
+  onClose,
+}: {
+  device: DeviceLocation;
+  onClose: () => void;
+}) {
+  const status = getDeviceStatus(device.lastSeenAt);
+  const battery = formatBattery(device.batteryPercent, device.batteryCharging);
+
+  return (
+    <FadeIn className="pointer-events-auto w-full max-w-lg">
+      <div className="glass-panel overflow-hidden rounded-2xl">
+        <div className="flex items-start gap-2.5 px-3 py-3 sm:gap-3 sm:px-4 sm:py-3.5">
+          <span
+            className={cn(
+              "mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl",
+              status === "online" && "bg-status-online/15",
+              status === "idle" && "bg-status-idle/15",
+              status === "offline" && "bg-muted"
             )}
-            {formatBattery(
-              selectedDevice.batteryPercent,
-              selectedDevice.batteryCharging
-            ) && (
-              <p>
-                แบต{" "}
-                {formatBattery(
-                  selectedDevice.batteryPercent,
-                  selectedDevice.batteryCharging
-                )}
-                {selectedDevice.sfGroupName
-                  ? ` · ${selectedDevice.sfGroupName}`
-                  : ""}
-              </p>
-            )}
-            {selectedDevice.phoneNo && <p>{selectedDevice.phoneNo}</p>}
+          >
+            <StatusDot status={status} showLabel />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-brand text-base font-semibold tracking-tight">
+              {device.employeeName || device.deviceName}
+            </p>
+            <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+              {device.deviceName}
+              {device.sfGroupName ? ` · ${device.sfGroupName}` : ""}
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {[
+                device.make
+                  ? device.make.charAt(0).toUpperCase() + device.make.slice(1)
+                  : null,
+                device.model,
+                device.osVersion ? `Android ${device.osVersion}` : null,
+                battery ? `แบต ${battery}` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {selectedDevice.latestLocation && (
-              <Button
-                render={
-                  <a
-                    href={googleMapsNavUrl(
-                      selectedDevice.latestLocation.latitude,
-                      selectedDevice.latestLocation.longitude
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  />
-                }
-                className="h-9"
-              >
-                นำทาง
-              </Button>
-            )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0 cursor-pointer rounded-full"
+            onClick={onClose}
+            aria-label="ปิดรายละเอียด"
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-1.5 border-t border-border/50 bg-muted/30 px-3 py-2.5 sm:gap-2 sm:px-4 sm:py-3">
+          {device.latestLocation && (
+            <Button
+              render={
+                <a
+                  href={googleMapsNavUrl(
+                    device.latestLocation.latitude,
+                    device.latestLocation.longitude
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+              className="h-9 flex-1 cursor-pointer gap-1.5 rounded-xl sm:flex-none"
+            >
+              <Navigation className="size-3.5" />
+              นำทาง
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            className="h-9 flex-1 cursor-pointer gap-1.5 rounded-xl sm:flex-none"
+            render={<Link href={`/history?deviceId=${device.id}`} />}
+          >
+            <HistoryIcon className="size-3.5" />
+            ประวัติ
+          </Button>
+          {device.latestLocation && (
             <Button
               variant="outline"
-              className="h-9"
+              className="h-9 flex-1 cursor-pointer gap-1.5 rounded-xl sm:flex-none"
               render={
-                <Link href={`/history?deviceId=${selectedDevice.id}`} />
+                <a
+                  href={googleMapsViewUrl(
+                    device.latestLocation.latitude,
+                    device.latestLocation.longitude
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
               }
             >
-              ดูประวัติ
+              <MapPinned className="size-3.5" />
+              พิกัด
             </Button>
-            {selectedDevice.latestLocation && (
-              <Button
-                variant="outline"
-                className="h-9"
-                render={
-                  <a
-                    href={googleMapsViewUrl(
-                      selectedDevice.latestLocation.latitude,
-                      selectedDevice.latestLocation.longitude
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  />
-                }
-              >
-                เปิดพิกัด
-              </Button>
-            )}
-          </div>
-        </footer>
-      )}
-    </>
+          )}
+        </div>
+      </div>
+    </FadeIn>
   );
 }
 
@@ -302,6 +389,7 @@ export default function MapPage() {
   const [devices, setDevices] = useState<DeviceLocation[]>([]);
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
   const [selectedGroup, setSelectedGroup] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -334,6 +422,28 @@ export default function MapPage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  const counts = useMemo(() => {
+    return devices
+      .filter((d) => {
+        const matchGroup =
+          selectedGroup === "all" ||
+          d.groups.some((g) => g.id === selectedGroup);
+        const q = search.toLowerCase();
+        const matchSearch =
+          !q ||
+          d.employeeName.toLowerCase().includes(q) ||
+          d.deviceName.toLowerCase().includes(q);
+        return matchGroup && matchSearch;
+      })
+      .reduce(
+        (acc, d) => {
+          acc[getDeviceStatus(d.lastSeenAt)]++;
+          return acc;
+        },
+        { online: 0, idle: 0, offline: 0 }
+      );
+  }, [devices, selectedGroup, search]);
+
   const filteredDevices = useMemo(() => {
     return devices.filter((d) => {
       const matchGroup =
@@ -344,21 +454,16 @@ export default function MapPage() {
         !q ||
         d.employeeName.toLowerCase().includes(q) ||
         d.deviceName.toLowerCase().includes(q);
-      return matchGroup && matchSearch;
+      const status = getDeviceStatus(d.lastSeenAt);
+      const matchStatus =
+        statusFilter === "all" || status === statusFilter;
+      return matchGroup && matchSearch && matchStatus;
     });
-  }, [devices, selectedGroup, search]);
+  }, [devices, selectedGroup, search, statusFilter]);
 
-  const counts = useMemo(() => {
-    return filteredDevices.reduce(
-      (acc, d) => {
-        acc[getDeviceStatus(d.lastSeenAt)]++;
-        return acc;
-      },
-      { online: 0, idle: 0, offline: 0 }
-    );
-  }, [filteredDevices]);
-
-  const selectedDevice = filteredDevices.find((d) => d.id === selectedDeviceId);
+  const selectedDevice =
+    devices.find((d) => d.id === selectedDeviceId) ??
+    filteredDevices.find((d) => d.id === selectedDeviceId);
 
   const listProps = {
     filteredDevices,
@@ -369,20 +474,17 @@ export default function MapPage() {
     setSearch,
     loading,
     counts,
+    statusFilter,
+    setStatusFilter,
     lastRefresh,
     selectedDeviceId,
     setSelectedDeviceId,
-    selectedDevice,
   };
 
   return (
-    <div className="relative flex h-full min-h-0 flex-1 overflow-hidden animate-fade-up">
-      {/* Desktop list */}
-      <aside className="hidden h-full w-[300px] shrink-0 flex-col overflow-hidden border-r bg-background md:flex">
-        <DeviceListPanel {...listProps} />
-      </aside>
-
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+    <div className="relative h-full min-h-0 flex-1 overflow-hidden animate-fade-up md:rounded-[1.25rem]">
+      {/* Map is the full stage */}
+      <div className="absolute inset-0 overflow-hidden md:rounded-[1.25rem]">
         <RealtimeMap
           devices={filteredDevices}
           selectedDeviceId={selectedDeviceId}
@@ -391,22 +493,42 @@ export default function MapPage() {
             setListOpen(false);
           }}
         />
+      </div>
 
-        {/* Mobile: open device list */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1000] flex justify-between gap-2 p-3 md:hidden">
-          <Button
-            type="button"
-            size="sm"
-            className="pointer-events-auto h-10 gap-1.5 shadow-sm"
-            onClick={() => setListOpen(true)}
-          >
-            <List className="size-3.5" />
-            รายการ
-            <span className="tabular-nums opacity-80">
-              {filteredDevices.length}
-            </span>
-          </Button>
+      {/* Desktop floating roster */}
+      <aside className="pointer-events-none absolute inset-y-3 left-3 z-[1000] hidden w-[360px] md:block">
+        <div className="pointer-events-auto glass-panel flex h-full max-h-full flex-col overflow-hidden rounded-[1.35rem] shadow-[0_20px_60px_-24px_rgba(15,23,42,0.55)]">
+          <DeviceListPanel {...listProps} />
         </div>
+      </aside>
+
+      {/* Selected device action card on map */}
+      {selectedDevice && (
+        <div className="pointer-events-none absolute inset-x-2 bottom-2 z-[1000] flex justify-center sm:inset-x-3 sm:bottom-3 md:inset-x-auto md:bottom-4 md:left-[392px] md:right-4 md:justify-start">
+          <SelectedDeviceCard
+            device={selectedDevice}
+            onClose={() => setSelectedDeviceId(null)}
+          />
+        </div>
+      )}
+
+      {/* Mobile open list */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 z-[1000] flex justify-between gap-2 p-2 sm:p-3 md:hidden"
+        style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top))" }}
+      >
+        <Button
+          type="button"
+          size="sm"
+          className="pointer-events-auto h-10 cursor-pointer gap-1.5 rounded-full px-3.5 shadow-lg sm:h-11 sm:px-4"
+          onClick={() => setListOpen(true)}
+        >
+          <List className="size-3.5" />
+          รายการ
+          <span className="tabular-nums opacity-80">
+            {filteredDevices.length}
+          </span>
+        </Button>
       </div>
 
       {/* Mobile sheet */}
@@ -414,14 +536,14 @@ export default function MapPage() {
         <div className="fixed inset-0 z-[1150] md:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-[var(--scrim)] animate-in fade-in-0"
+            className="absolute inset-0 cursor-pointer bg-[var(--scrim)] animate-in fade-in-0"
             aria-label="ปิดรายการ"
             onClick={() => setListOpen(false)}
           />
           <div
-            className="absolute inset-x-0 bottom-0 flex max-h-[min(78dvh,640px)] flex-col overflow-hidden border-t bg-background shadow-lg animate-in slide-in-from-bottom-4 duration-200"
+            className="absolute inset-x-0 bottom-0 flex max-h-[min(82dvh,680px)] flex-col overflow-hidden rounded-t-[1.5rem] border-t border-border/70 bg-card shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
             style={{
-              paddingBottom: "calc(3.75rem + env(safe-area-inset-bottom))",
+              paddingBottom: "calc(4.25rem + env(safe-area-inset-bottom))",
             }}
           >
             <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -429,7 +551,7 @@ export default function MapPage() {
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                className="absolute right-3 top-3 z-10"
+                className="absolute right-3 top-3 z-10 cursor-pointer rounded-full"
                 onClick={() => setListOpen(false)}
                 aria-label="ปิด"
               >
@@ -437,6 +559,7 @@ export default function MapPage() {
               </Button>
               <DeviceListPanel
                 {...listProps}
+                compact
                 onPickDevice={() => setListOpen(false)}
               />
             </div>

@@ -3,6 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { THEME_CHANGE_EVENT } from "@/hooks/use-theme-dark";
 
 const STORAGE_KEY = "spgps-theme";
 
@@ -22,6 +23,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       // ignore
     }
     setDark(next);
+    window.dispatchEvent(
+      new CustomEvent(THEME_CHANGE_EVENT, { detail: { dark: next } })
+    );
   }
 
   return (

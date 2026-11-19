@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   Map,
   History,
@@ -19,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PageTransition } from "@/components/motion";
 
 type Props = {
   role: "ADMIN" | "VIEWER";
@@ -30,8 +32,6 @@ type Props = {
 const STORAGE_KEY = "spgps-sidebar-collapsed";
 
 async function handleSignOut() {
-  // Avoid Auth.js absolute redirects to http://0.0.0.0:3000 when the
-  // server is bound with -H 0.0.0.0 — keep the browser's current host.
   await signOut({ redirect: false });
   window.location.assign("/login");
 }
@@ -65,23 +65,17 @@ function NavLink({
       href={href}
       title={collapsed ? label : undefined}
       className={cn(
-        "group relative flex min-h-9 items-center text-sm transition-colors",
-        collapsed ? "justify-center px-0 py-2" : "gap-2.5 py-2 pl-3 pr-2",
+        "group flex min-h-10 cursor-pointer items-center rounded-xl text-sm transition-all duration-200",
+        collapsed ? "justify-center px-0" : "gap-3 px-3",
         active
-          ? "font-medium text-foreground"
-          : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground"
+          ? "ink-nav-active font-semibold"
+          : "text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground"
       )}
     >
-      {active && !collapsed && (
-        <span className="absolute inset-y-1 left-0 w-0.5 origin-center rounded-full bg-primary animate-nav-in" />
-      )}
-      {active && collapsed && (
-        <span className="absolute inset-y-1.5 left-0 w-0.5 origin-center rounded-full bg-primary animate-nav-in" />
-      )}
       <Icon
         className={cn(
-          "size-[15px] shrink-0 transition-opacity",
-          active ? "opacity-100 text-primary" : "opacity-70 group-hover:opacity-100"
+          "size-4 shrink-0 transition-colors duration-200",
+          active ? "text-sidebar-primary" : "opacity-80 group-hover:opacity-100"
         )}
       />
       {!collapsed && <span className="truncate">{label}</span>}
@@ -104,13 +98,20 @@ function MobileTabLink({
     <Link
       href={href}
       className={cn(
-        "flex min-h-11 min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[11px] transition-colors",
+        "flex min-h-12 min-w-0 flex-1 cursor-pointer flex-col items-center gap-0.5 px-1 py-1.5 text-[11px] transition-colors duration-200",
         active
-          ? "font-medium text-primary"
+          ? "font-semibold text-primary"
           : "text-muted-foreground active:text-foreground"
       )}
     >
-      <Icon className="size-5 shrink-0" strokeWidth={active ? 2.25 : 1.75} />
+      <span
+        className={cn(
+          "flex size-8 items-center justify-center rounded-full transition-colors duration-200",
+          active && "bg-primary/15"
+        )}
+      >
+        <Icon className="size-5 shrink-0" strokeWidth={active ? 2.4 : 1.75} />
+      </span>
       <span className="truncate">{label}</span>
     </Link>
   );
@@ -118,6 +119,7 @@ function MobileTabLink({
 
 export function AppShell({ role, email, children, fullBleed }: Props) {
   const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
   const bleed =
     fullBleed ??
     (pathname.startsWith("/map") || pathname.startsWith("/history"));
@@ -151,37 +153,44 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
-      {/* Desktop sidebar */}
+    <div
+      className="flex h-dvh overflow-hidden bg-background"
+      data-testid="app-shell"
+    >
       <aside
         className={cn(
-          "hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-out md:flex",
-          ready ? (collapsed ? "w-[64px]" : "w-[220px]") : "w-[220px]"
+          "relative hidden h-full shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out md:flex",
+          "before:pointer-events-none before:absolute before:inset-y-0 before:right-0 before:w-px before:bg-gradient-to-b before:from-transparent before:via-sidebar-primary/40 before:to-transparent",
+          ready ? (collapsed ? "w-[76px]" : "w-[248px]") : "w-[248px]"
         )}
+        data-testid="app-sidebar"
       >
         <div
           className={cn(
-            "flex items-start gap-2 py-5",
-            collapsed ? "flex-col items-center px-2" : "px-3"
+            "flex items-start gap-2 pb-2 pt-6",
+            collapsed ? "flex-col items-center px-2" : "px-4"
           )}
         >
           <Link
             href="/map"
-            className={cn("min-w-0 flex-1", collapsed && "text-center")}
+            className={cn(
+              "min-w-0 flex-1 cursor-pointer",
+              collapsed && "text-center"
+            )}
             title="SPGPS"
           >
             <span
               className={cn(
-                "font-brand flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground",
-                collapsed && "justify-center text-sm"
+                "font-brand flex items-center gap-2.5 text-[1.35rem] font-semibold tracking-tight text-sidebar-foreground",
+                collapsed && "justify-center text-base"
               )}
             >
               <span className="brand-mark" aria-hidden />
               {!collapsed && "SPGPS"}
             </span>
             {!collapsed && (
-              <span className="mt-1 block text-[11px] tracking-[0.14em] text-muted-foreground">
-                FLEET
+              <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.22em] text-sidebar-primary">
+                Command Deck
               </span>
             )}
           </Link>
@@ -189,7 +198,7 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="shrink-0 text-muted-foreground hover:text-foreground"
+            className="shrink-0 cursor-pointer text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
             onClick={toggleCollapsed}
             title={collapsed ? "ขยายเมนู" : "ยุบเมนู"}
             aria-label={collapsed ? "ขยายเมนู" : "ยุบเมนู"}
@@ -204,11 +213,12 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
 
         <nav
           className={cn(
-            "flex-1 space-y-6 overflow-y-auto overflow-x-hidden",
-            collapsed ? "px-1.5" : "px-2"
+            "mt-4 flex-1 space-y-6 overflow-y-auto overflow-x-hidden",
+            collapsed ? "px-2" : "px-3"
           )}
+          aria-label="เมนูหลัก"
         >
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {mainLinks.map((link) => (
               <NavLink
                 key={link.href}
@@ -222,14 +232,14 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
           {role === "ADMIN" && (
             <div>
               {!collapsed && (
-                <p className="mb-2 px-3 text-[11px] font-medium tracking-[0.12em] text-muted-foreground">
-                  การตั้งค่า
+                <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/40">
+                  Admin
                 </p>
               )}
               {collapsed && (
-                <div className="mx-auto mb-2 h-px w-6 bg-border" />
+                <div className="mx-auto mb-2 h-px w-8 bg-sidebar-border" />
               )}
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {adminLinks.map((link) => (
                   <NavLink
                     key={link.href}
@@ -245,29 +255,36 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
 
         <div
           className={cn(
-            "border-t border-sidebar-border",
-            collapsed ? "p-2" : "p-3"
+            "mt-auto border-t border-sidebar-border/80",
+            collapsed ? "p-2" : "p-4"
           )}
         >
-          <div className={cn("mb-2 flex", collapsed ? "justify-center" : "justify-end")}>
-            <ThemeToggle />
+          <div
+            className={cn(
+              "mb-3 flex",
+              collapsed ? "justify-center" : "justify-end"
+            )}
+          >
+            <ThemeToggle className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
           </div>
           {!collapsed && (
-            <>
-              <p className="truncate px-1 text-sm text-foreground">{email}</p>
-              <p className="mt-0.5 px-1 text-[11px] tracking-wide text-muted-foreground">
+            <div className="mb-3 rounded-xl bg-sidebar-accent/70 px-3 py-2.5">
+              <p className="truncate text-sm font-medium text-sidebar-foreground">
+                {email}
+              </p>
+              <p className="mt-0.5 text-[11px] font-semibold tracking-[0.14em] text-sidebar-primary">
                 {role}
               </p>
-            </>
+            </div>
           )}
           <Button
             variant="ghost"
             size={collapsed ? "icon-sm" : "sm"}
             className={cn(
-              "text-muted-foreground hover:text-foreground",
+              "cursor-pointer text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground",
               collapsed
-                ? "mx-auto mt-0"
-                : "mt-2 h-8 w-full justify-start px-2 text-[13px]"
+                ? "mx-auto"
+                : "h-9 w-full justify-start gap-2 px-3 text-[13px]"
             )}
             onClick={() => void handleSignOut()}
             title="ออกจากระบบ"
@@ -279,84 +296,110 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
         </div>
       </aside>
 
-      {/* Mobile more-menu overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[1200] md:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-[var(--scrim)] animate-in fade-in-0"
-            aria-label="ปิดเมนู"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="absolute inset-x-3 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] border bg-background p-3 shadow-lg animate-in fade-in-0 slide-in-from-bottom-2">
-            <div className="mb-2 flex items-center justify-between px-1">
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-medium">{email}</p>
-                <p className="text-[11px] text-muted-foreground">{role}</p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="ปิด"
-              >
-                <X className="size-4" />
-              </Button>
-            </div>
-            {role === "ADMIN" && (
-              <div className="space-y-0.5 border-t pt-2">
-                {adminLinks.map((link) => {
-                  const Icon = link.icon;
-                  const active = pathname.startsWith(link.href);
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className={cn(
-                        "flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[13px]",
-                        active
-                          ? "bg-accent font-medium text-foreground"
-                          : "text-muted-foreground active:bg-accent/60"
-                      )}
-                    >
-                      <Icon className="size-4" />
-                      {link.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-            <Button
-              variant="ghost"
-              className="mt-2 h-10 w-full justify-start gap-2.5 px-3 text-[13px] text-muted-foreground"
-              onClick={() => void handleSignOut()}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-[1200] md:hidden">
+            <motion.button
+              type="button"
+              className="absolute inset-0 cursor-pointer bg-[var(--scrim)]"
+              aria-label="ปิดเมนู"
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <motion.div
+              className="absolute inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] rounded-2xl border border-border/70 bg-card p-4 shadow-2xl"
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: 10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              <LogOut className="size-4" />
-              ออกจากระบบ
-            </Button>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{email}</p>
+                  <p className="text-[11px] font-semibold tracking-[0.14em] text-primary">
+                    {role}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <ThemeToggle />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="cursor-pointer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-label="ปิด"
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              </div>
+              {role === "ADMIN" && (
+                <div className="space-y-1 border-t border-border/70 pt-3">
+                  {adminLinks.map((link) => {
+                    const Icon = link.icon;
+                    const active = pathname.startsWith(link.href);
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-200",
+                          active
+                            ? "bg-primary/10 font-semibold text-primary"
+                            : "text-muted-foreground active:bg-muted"
+                        )}
+                      >
+                        <Icon className="size-4" />
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                className="mt-3 h-11 w-full cursor-pointer justify-start gap-3 rounded-xl px-3 text-sm text-muted-foreground"
+                onClick={() => void handleSignOut()}
+              >
+                <LogOut className="size-4" />
+                ออกจากระบบ
+              </Button>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <main
           className={cn(
             "min-h-0 min-w-0 flex-1",
             bleed
-              ? "flex flex-col overflow-hidden"
-              : "overflow-y-auto px-4 py-5 md:px-10 md:py-8",
-            // Leave room for mobile bottom tabs
-            "pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
+              ? "flex flex-col overflow-hidden p-0 md:p-3"
+              : "overflow-y-auto overflow-x-hidden px-3 py-5 sm:px-4 sm:py-6 md:px-10 md:py-9",
+            "pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-3"
           )}
         >
-          {children}
+          <PageTransition
+            key={pathname}
+            className={cn(
+              "min-w-0",
+              bleed &&
+                "min-h-0 overflow-hidden md:rounded-2xl md:border md:border-border/50 md:bg-card/40 md:shadow-sm"
+            )}
+          >
+            {children}
+          </PageTransition>
         </main>
 
-        {/* Mobile bottom tabs */}
         <nav
-          className="fixed inset-x-0 bottom-0 z-[1100] flex border-t bg-background/95 backdrop-blur-sm md:hidden"
+          className="fixed inset-x-0 bottom-0 z-[1100] flex border-t border-border/70 bg-card/95 backdrop-blur-xl md:hidden"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          aria-label="เมนูมือถือ"
+          data-testid="mobile-tabs"
         >
           {mainLinks.map((link) => (
             <MobileTabLink
@@ -369,13 +412,23 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
             type="button"
             onClick={() => setMobileMenuOpen((o) => !o)}
             className={cn(
-              "flex min-h-11 min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[11px] transition-colors",
+              "flex min-h-12 min-w-0 flex-1 cursor-pointer flex-col items-center gap-0.5 px-1 py-1.5 text-[11px] transition-colors duration-200",
               mobileMenuOpen || pathname.startsWith("/admin")
-                ? "font-medium text-foreground"
+                ? "font-semibold text-primary"
                 : "text-muted-foreground"
             )}
+            aria-expanded={mobileMenuOpen}
+            aria-label="เปิดเมนูเพิ่มเติม"
           >
-            <Menu className="size-5 shrink-0" />
+            <span
+              className={cn(
+                "flex size-8 items-center justify-center rounded-full",
+                (mobileMenuOpen || pathname.startsWith("/admin")) &&
+                  "bg-primary/15"
+              )}
+            >
+              <Menu className="size-5 shrink-0" />
+            </span>
             <span>เมนู</span>
           </button>
         </nav>

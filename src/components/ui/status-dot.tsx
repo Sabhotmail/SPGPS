@@ -26,7 +26,10 @@ export function StatusDot({
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       <span
-        className={cn("size-1.5 shrink-0 rounded-full", colors[status])}
+        className={cn(
+          "size-2 shrink-0 rounded-full ring-2 ring-background",
+          colors[status]
+        )}
         aria-hidden
       />
       {showLabel && (

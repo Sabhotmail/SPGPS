@@ -6,7 +6,6 @@ import {
   MapContainer,
   Marker,
   Popup,
-  TileLayer,
   ZoomControl,
   useMap,
 } from "react-leaflet";
@@ -22,8 +21,8 @@ import {
   statusColor,
 } from "@/lib/types";
 import { StatusDot } from "@/components/ui/status-dot";
-import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
 import { isMapAlive } from "@/lib/leaflet-alive";
+import { ThemeTileLayer } from "@/components/map/ThemeTileLayer";
 import "leaflet/dist/leaflet.css";
 
 /** Status-only icon. Active state is toggled via CSS class — do not bake it
@@ -313,7 +312,7 @@ export function RealtimeMap({
         zoomControl={false}
       >
         <ZoomControl position="bottomright" />
-        <TileLayer attribution={MAP_TILE_ATTRIBUTION} url={MAP_TILE_URL} />
+        <ThemeTileLayer />
         <FitBounds devices={devices} />
         <InvalidateSize />
         <FocusSelected selectedDeviceId={selectedDeviceId} devices={devices} />

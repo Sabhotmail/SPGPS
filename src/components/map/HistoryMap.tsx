@@ -7,7 +7,6 @@ import {
   Marker,
   Polyline,
   Popup,
-  TileLayer,
   useMap,
 } from "react-leaflet";
 import {
@@ -24,8 +23,8 @@ import {
   SPEED_LEGEND,
   buildSpeedSegments,
 } from "@/lib/route-speed";
-import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/map-tiles";
 import { isMapAlive } from "@/lib/leaflet-alive";
+import { ThemeTileLayer } from "@/components/map/ThemeTileLayer";
 import "leaflet/dist/leaflet.css";
 
 const COVERAGE_STYLE: L.PathOptions = {
@@ -483,11 +482,11 @@ export function HistoryMap({
         center={defaultCenter}
         zoom={11}
         className="h-full w-full"
-        style={{ height: "100%", width: "100%", background: "#fff" }}
+        style={{ height: "100%", width: "100%" }}
         scrollWheelZoom
         zoomControl={false}
       >
-        <TileLayer attribution={MAP_TILE_ATTRIBUTION} url={MAP_TILE_URL} />
+        <ThemeTileLayer />
         <InvalidateSize layoutKey={sizeKey} />
         {locations.length > 0 && (
           <FitRoute locations={locations} layoutKey={routeId} />

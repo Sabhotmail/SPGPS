@@ -1,10 +1,10 @@
-import { Manrope, Noto_Sans_Thai } from "next/font/google";
+import { Outfit, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
 import { SessionProvider } from "@/components/SessionProvider";
 import { cn } from "@/lib/utils";
 
-const manrope = Manrope({
+const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-brand",
   display: "swap",
@@ -17,14 +17,13 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "SPGPS — GPS Tracking",
+  title: "SPGPS — Command Deck",
   description: "Scalefusion GPS tracking with group-based access control",
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover" as const,
 };
 
@@ -34,7 +33,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="th" className={cn(manrope.variable, notoSansThai.variable, "font-sans")} suppressHydrationWarning>
+    <html
+      lang="th"
+      className={cn(outfit.variable, notoSansThai.variable, "font-sans")}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{

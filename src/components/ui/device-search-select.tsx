@@ -69,7 +69,7 @@ export function DeviceSearchSelect({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-[13px] outline-none transition-colors",
+          "flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-input bg-transparent px-2.5 text-left text-[13px] outline-none transition-colors",
           "hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
           open && "border-ring ring-3 ring-ring/50"
         )}

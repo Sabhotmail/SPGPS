@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { ArrowLeft } from "lucide-react";
 import { AuthFrame } from "@/components/AuthFrame";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,13 +58,16 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-destructive" role="alert">
+      <div className="mt-7 space-y-4">
+        <p
+          className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-[13px] text-destructive"
+          role="alert"
+        >
           ไม่พบโทเค็นในลิงก์ กรุณาขอรีเซ็ตใหม่
         </p>
         <Link
           href="/forgot-password"
-          className="text-sm underline-offset-4 hover:underline"
+          className="inline-flex text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           ไปหน้าลืมรหัสผ่าน
         </Link>
@@ -73,9 +76,9 @@ function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+    <form onSubmit={handleSubmit} className="mt-7 space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="password">
+        <Label htmlFor="password" className="text-[13px]">
           รหัสผ่านใหม่
         </Label>
         <Input
@@ -86,11 +89,12 @@ function ResetPasswordForm() {
           required
           minLength={6}
           autoComplete="new-password"
-          className="h-10"
+          placeholder="อย่างน้อย 6 ตัวอักษร"
+          className="h-11 rounded-xl"
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="confirm">
+        <Label htmlFor="confirm" className="text-[13px]">
           ยืนยันรหัสผ่าน
         </Label>
         <Input
@@ -101,15 +105,23 @@ function ResetPasswordForm() {
           required
           minLength={6}
           autoComplete="new-password"
-          className="h-10"
+          placeholder="พิมพ์ซ้ำอีกครั้ง"
+          className="h-11 rounded-xl"
         />
       </div>
       {error && (
-        <p className="text-sm text-destructive" role="alert">
+        <p
+          className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-[13px] text-destructive"
+          role="alert"
+        >
           {error}
         </p>
       )}
-      <Button type="submit" className="h-10 w-full" disabled={loading}>
+      <Button
+        type="submit"
+        className="h-11 w-full cursor-pointer rounded-xl text-[15px] font-semibold"
+        disabled={loading}
+      >
         {loading ? "กำลังบันทึก..." : "ตั้งรหัสผ่านใหม่"}
       </Button>
     </form>
@@ -119,6 +131,7 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <AuthFrame
+      eyebrow="Recovery"
       title="ตั้งรหัสผ่านใหม่"
       description="รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"
     >
@@ -129,11 +142,12 @@ export default function ResetPasswordPage() {
       >
         <ResetPasswordForm />
       </Suspense>
-      <p className="mt-5 text-sm">
+      <p className="mt-6">
         <Link
           href="/login"
-          className="text-foreground underline-offset-4 hover:underline"
+          className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
         >
+          <ArrowLeft className="size-3.5" />
           กลับไปเข้าสู่ระบบ
         </Link>
       </p>

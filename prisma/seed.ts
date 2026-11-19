@@ -8,13 +8,18 @@ async function main() {
   ).toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 
+  const passwordHash = await hashPassword(password);
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    console.log(`Admin user already exists: ${email}`);
+    // Keep local/e2e credentials in sync with SEED_ADMIN_PASSWORD
+    await prisma.user.update({
+      where: { email },
+      data: { passwordHash, role: Role.ADMIN },
+    });
+    console.log(`Admin user updated: ${email}`);
     return;
   }
 
-  const passwordHash = await hashPassword(password);
   await prisma.user.create({
     data: {
       email,

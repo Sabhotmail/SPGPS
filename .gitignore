@@ -6,3 +6,13 @@ dist
 *.log
 logs/
 .DS_Store
+storybook-static
+playwright-report
+test-results
+blob-report
+tsconfig.tsbuildinfo
+.agents/
+.cursor/
+.oil-ui/
+.superpowers/
+skills-lock.json
