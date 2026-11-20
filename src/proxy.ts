@@ -11,5 +11,6 @@ export const config = {
     "/api/devices/:path*",
     "/api/groups/:path*",
     "/api/sync/:path*",
+    "/api/presence/:path*",
   ],
 };

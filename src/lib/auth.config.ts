@@ -34,7 +34,8 @@ export const authConfig = {
         nextUrl.pathname.startsWith("/api/locations") ||
         nextUrl.pathname.startsWith("/api/devices") ||
         nextUrl.pathname.startsWith("/api/groups") ||
-        nextUrl.pathname.startsWith("/api/sync");
+        nextUrl.pathname.startsWith("/api/sync") ||
+        nextUrl.pathname.startsWith("/api/presence");
 
       if (isAuthPage && isLoggedIn) {
         return Response.redirect(new URL("/map", nextUrl));

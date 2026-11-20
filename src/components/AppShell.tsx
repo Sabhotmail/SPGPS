@@ -16,12 +16,14 @@ import {
   PanelLeftClose,
   PanelLeft,
   Menu,
+  Radio,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PageTransition } from "@/components/motion";
+import { PresenceHeartbeat } from "@/components/PresenceHeartbeat";
 
 type Props = {
   role: "ADMIN" | "VIEWER";
@@ -46,6 +48,7 @@ const adminLinks = [
   { href: "/admin/devices", label: "อุปกรณ์", icon: Smartphone },
   { href: "/admin/groups", label: "กลุ่ม", icon: FolderKanban },
   { href: "/admin/users", label: "ผู้ใช้", icon: Users },
+  { href: "/admin/online", label: "Online", icon: Radio },
   { href: "/admin/mobile", label: "แอพมือถือ", icon: KeyRound },
 ];
 
@@ -159,6 +162,7 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
       className="flex h-dvh overflow-hidden bg-background"
       data-testid="app-shell"
     >
+      <PresenceHeartbeat />
       <aside
         className={cn(
           "relative hidden h-full shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out md:flex",

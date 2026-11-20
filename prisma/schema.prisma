@@ -34,8 +34,21 @@ model User {
 
   groupAccess          UserGroupAccess[]
   passwordResetTokens  PasswordResetToken[]
+  presence             UserPresence?
 
   @@map("users")
+}
+
+model UserPresence {
+  userId     String   @id @map("user_id")
+  lastSeenAt DateTime @map("last_seen_at")
+  path       String?
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastSeenAt])
+  @@map("user_presence")
 }
 
 model PasswordResetToken {
