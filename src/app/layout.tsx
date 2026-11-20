@@ -17,14 +17,24 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "SPGPS — Command Deck",
+  applicationName: "SPGPS",
+  title: "SPGPS — Soft Field Station",
   description: "Scalefusion GPS tracking with group-based access control",
+  appleWebApp: {
+    capable: true,
+    title: "SPGPS",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover" as const,
+  themeColor: "#3d6ea8",
 };
 
 export default function RootLayout({
