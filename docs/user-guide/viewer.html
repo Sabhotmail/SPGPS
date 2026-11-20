@@ -1,0 +1,338 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>คู่มือการใช้งาน SiriPro GPS — สำหรับผู้ใช้ทั่วไป (Viewer)</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --brand: #1d4ed8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Sarabun", "Noto Sans Thai", "Segoe UI", Tahoma, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+    }
+    .page {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    .cover {
+      background: linear-gradient(145deg, #0b1f3a 0%, #1e3a5f 55%, #2563eb 100%);
+      color: #ffffff;
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+    }
+    .cover .eyebrow {
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      color: #93c5fd;
+      margin: 0 0 0.75rem;
+    }
+    .cover h1 {
+      margin: 0 0 0.75rem;
+      font-size: 1.85rem;
+      line-height: 1.25;
+      color: #ffffff;
+    }
+    .cover > p {
+      margin: 0;
+      max-width: 36rem;
+      color: #e2e8f0;
+    }
+    .cover .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      margin-top: 1.25rem;
+      font-size: 0.9rem;
+      color: #f8fafc;
+    }
+    h2 {
+      margin: 2.5rem 0 0.75rem;
+      font-size: 1.4rem;
+      color: var(--brand);
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 0.4rem;
+    }
+    h3 {
+      margin: 1.5rem 0 0.5rem;
+      font-size: 1.08rem;
+    }
+    p { margin: 0.6rem 0; color: var(--ink); }
+    .muted { color: var(--muted); }
+    ol, ul { margin: 0.5rem 0 1rem; padding-left: 1.35rem; }
+    li { margin: 0.35rem 0; }
+    strong { font-weight: 700; }
+    a { color: var(--brand); }
+    .toc {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.1rem 1.25rem;
+    }
+    .toc ol { margin: 0.4rem 0 0; }
+    .figure {
+      margin: 1.1rem 0 1.5rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #0b1220;
+    }
+    .figure figcaption {
+      padding: 0.7rem 1rem 0.9rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+    }
+    .note {
+      background: #eff6ff;
+      border-left: 4px solid var(--brand);
+      border-radius: 0 10px 10px 0;
+      padding: 0.85rem 1rem;
+      margin: 1rem 0;
+    }
+    .section { break-inside: avoid; }
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    @media print {
+      body { background: #fff; font-size: 12.5pt; }
+      .page { max-width: none; padding: 0; }
+      .cover {
+        border-radius: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      h2 {
+        page-break-before: always;
+        break-before: page;
+      }
+      h2:first-of-type { page-break-before: auto; break-before: auto; }
+      .no-print { display: none !important; }
+      a { text-decoration: none; color: inherit; }
+      .figure img { max-height: 58vh; object-fit: contain; object-position: top; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="cover">
+      <p class="eyebrow">SiriPro GPS</p>
+      <h1>คู่มือการใช้งาน SiriPro GPS<br />สำหรับผู้ใช้ทั่วไป (Viewer)</h1>
+      <p>ติดตามพิกัดทีมแบบเรียลไทม์ — แผนที่สดและประวัติเส้นทางบนเว็บเบราว์เซอร์</p>
+      <div class="meta">
+        <span>ภาษา: ไทย</span>
+        <span>ช่องทาง: เว็บ</span>
+        <span>อัปเดต: 20 พ.ย. 2569</span>
+      </div>
+    </header>
+
+    <p class="no-print muted">
+      วิธีได้ไฟล์ PDF: กด <strong>Ctrl+P</strong> (หรือ Cmd+P) → เลือกเครื่องพิมพ์
+      <strong>Save as PDF / Microsoft Print to PDF</strong> → บันทึก
+    </p>
+
+    <nav class="toc" aria-label="สารบัญ">
+      <strong>สารบัญ</strong>
+      <ol>
+        <li><a href="#intro">บทนำ</a></li>
+        <li><a href="#login">เข้าสู่ระบบ</a></li>
+        <li><a href="#nav">เมนูหลัก</a></li>
+        <li><a href="#map">ตำแหน่ง (แผนที่เรียลไทม์)</a></li>
+        <li><a href="#history">ประวัติเส้นทาง</a></li>
+        <li><a href="#faq">เคล็ดลับและปัญหาที่พบบ่อย</a></li>
+      </ol>
+    </nav>
+
+    <section id="intro" class="section">
+      <h2>1. บทนำ</h2>
+      <p>
+        <strong>SiriPro GPS</strong> เป็นระบบดูตำแหน่งทีมงานบนแผนที่
+        และดูประวัติเส้นทางย้อนหลัง ผู้ใช้ทั่วไป (Viewer) จะเห็นเฉพาะกลุ่มที่ผู้ดูแลระบบมอบสิทธิ์ให้
+      </p>
+      <h3>สิ่งที่ต้องมี</h3>
+      <ul>
+        <li>บัญชีอีเมลและรหัสผ่านที่ผู้ดูแลระบบสร้างให้</li>
+        <li>การเชื่อมต่ออินเทอร์เน็ต</li>
+        <li>เว็บเบราว์เซอร์ (เช่น Chrome, Edge)</li>
+        <li>ที่อยู่เว็บขององค์กร (URL ที่ผู้ดูแลระบบแจ้ง)</li>
+      </ul>
+      <figure class="figure">
+        <img src="images/01-login.png" alt="หน้าเข้าสู่ระบบ SiriPro GPS" />
+        <figcaption>ภาพที่ 1 — หน้าเข้าสู่ระบบ SiriPro GPS</figcaption>
+      </figure>
+    </section>
+
+    <section id="login" class="section">
+      <h2>2. เข้าสู่ระบบ</h2>
+      <ol>
+        <li>เปิด URL ที่ผู้ดูแลระบบแจ้ง จนเข้าสู่หน้า <strong>เข้าสู่ระบบ</strong></li>
+        <li>กรอก <strong>อีเมล</strong> และ <strong>รหัสผ่าน</strong></li>
+        <li>กดปุ่ม <strong>เข้าสู่ระบบ</strong></li>
+        <li>ระบบจะพาไปหน้า <strong>ตำแหน่ง</strong> (แผนที่สด)</li>
+      </ol>
+      <div class="note">
+        หากอีเมลหรือรหัสผ่านไม่ถูกต้อง ระบบจะแสดงข้อความแจ้งเตือนบนหน้าฟอร์ม
+        ให้ตรวจสอบแล้วลองใหม่ หรือติดต่อผู้ดูแลระบบ
+      </div>
+      <h3>ลืมรหัสผ่าน</h3>
+      <ol>
+        <li>ที่หน้าเข้าสู่ระบบ กดลิงก์ <strong>ลืมรหัสผ่าน?</strong> (อยู่ถัดจากคำว่า รหัสผ่าน)</li>
+        <li>ทำตามขั้นตอนบนหน้าจอเพื่อรับลิงก์ตั้งรหัสใหม่ทางอีเมล</li>
+        <li>ตั้งรหัสผ่านใหม่แล้วกลับมาเข้าสู่ระบบอีกครั้ง</li>
+      </ol>
+      <figure class="figure">
+        <img src="images/02-login-forgot-link.png" alt="ฟอร์มเข้าสู่ระบบและลิงก์ลืมรหัสผ่าน" />
+        <figcaption>ภาพที่ 2 — ฟอร์มเข้าสู่ระบบ และลิงก์ “ลืมรหัสผ่าน?”</figcaption>
+      </figure>
+    </section>
+
+    <section id="nav" class="section">
+      <h2>3. เมนูหลัก</h2>
+      <p>หลังเข้าสู่ระบบ จะเห็นแถบเมนูด้านซ้ายดังนี้</p>
+      <ul>
+        <li><strong>ตำแหน่ง</strong> — ดูพิกัดล่าสุดของอุปกรณ์หรือพนักงานบนแผนที่</li>
+        <li><strong>ประวัติ</strong> — ดูเส้นทางย้อนหลังตามวันที่เลือก</li>
+      </ul>
+      <p>
+        ด้านล่างเมนูแสดงอีเมลของคุณและบทบาท <strong>VIEWER</strong>
+        กด <strong>ออกจากระบบ</strong> เมื่อเลิกใช้งาน
+      </p>
+      <figure class="figure">
+        <img src="images/03-sidebar-nav.png" alt="เมนูตำแหน่งและประวัติ พร้อมแผงฟลีตบนแผนที่" />
+        <figcaption>ภาพที่ 3 — เมนูหลัก (ตำแหน่ง / ประวัติ) และแผงฟลีตบนแผนที่</figcaption>
+      </figure>
+    </section>
+
+    <section id="map" class="section">
+      <h2>4. ตำแหน่ง (แผนที่เรียลไทม์)</h2>
+      <p>
+        หน้านี้แสดงตำแหน่งล่าสุดของอุปกรณ์ในกลุ่มที่คุณมีสิทธิ์ดู
+        แผงด้านซ้ายชื่อ <strong>ฟลีตบนแผนที่</strong> ส่วนแผนที่อยู่ด้านขวา
+      </p>
+
+      <h3>อ่านสถานะคร่าวๆ</h3>
+      <ul>
+        <li>จุดสีเขียว — <strong>ออนไลน์</strong></li>
+        <li>จุดสีส้ม — <strong>ไม่เคลื่อนไหว</strong></li>
+        <li>จุดสีเทา — <strong>ออฟไลน์</strong></li>
+      </ul>
+      <p class="muted">ตัวเลขใต้จุดสถานะคือจำนวนอุปกรณ์ในแต่ละสถานะ กดเพื่อกรองได้</p>
+
+      <figure class="figure">
+        <img src="images/04-map-overview.png" alt="ภาพรวมหน้าตำแหน่งพร้อมรายการอุปกรณ์และแผนที่" />
+        <figcaption>ภาพที่ 4 — ภาพรวมหน้าตำแหน่ง</figcaption>
+      </figure>
+
+      <h3>ค้นหาและกรอง</h3>
+      <ol>
+        <li>พิมพ์ในช่อง <strong>ค้นหาชื่อหรืออุปกรณ์</strong> เพื่อค้นหาชื่อที่ต้องการ</li>
+        <li>เปิดรายการกลุ่ม แล้วเลือกกลุ่มที่ต้องการ หรือเลือก <strong>ทุกกลุ่ม</strong></li>
+        <li>กดปุ่มสถานะด้านบนของแผง เพื่อกรองเฉพาะออนไลน์ / ไม่เคลื่อนไหว / ออฟไลน์</li>
+      </ol>
+      <figure class="figure">
+        <img src="images/05-map-filters.png" alt="เปิดตัวกรองกลุ่มบนแผงฟลีต" />
+        <figcaption>ภาพที่ 5 — กรองตามกลุ่มจากรายการ “ทุกกลุ่ม”</figcaption>
+      </figure>
+
+      <h3>ดูรายละเอียดอุปกรณ์</h3>
+      <ol>
+        <li>คลิกชื่ออุปกรณ์ในรายการ หรือคลิกจุดบนแผนที่</li>
+        <li>อ่านรายละเอียด เช่น รุ่นเครื่อง แบตเตอรี่ กลุ่ม และเวลาอัปเดตล่าสุด</li>
+        <li>ใช้ปุ่มลัดได้ตามต้องการ เช่น <strong>นำทาง</strong>, <strong>ประวัติ</strong>, <strong>พิกัด</strong> / <strong>เปิดพิกัด</strong></li>
+      </ol>
+      <figure class="figure">
+        <img src="images/06-map-device-detail.png" alt="เลือกอุปกรณ์แล้วแสดงหน้าต่างรายละเอียดบนแผนที่" />
+        <figcaption>ภาพที่ 6 — รายละเอียดอุปกรณ์ที่เลือกบนแผนที่</figcaption>
+      </figure>
+    </section>
+
+    <section id="history" class="section">
+      <h2>5. ประวัติเส้นทาง</h2>
+      <p>
+        เมนู <strong>ประวัติ</strong> ใช้ดูเส้นทางย้อนหลังของพนักงานหรืออุปกรณ์ในวันที่เลือก
+      </p>
+      <ol>
+        <li>เปิดเมนู <strong>ประวัติ</strong></li>
+        <li>ที่ช่อง <strong>พนักงาน</strong> กด <strong>เลือกพนักงาน</strong> แล้วค้นหาหรือเลือกจากรายการ</li>
+        <li>เลือก <strong>วันที่</strong> ที่ต้องการ</li>
+        <li>กดปุ่ม <strong>โหลด</strong></li>
+      </ol>
+      <figure class="figure">
+        <img src="images/07-history-overview.png" alt="หน้าประวัติเส้นทางก่อนเลือกพนักงาน" />
+        <figcaption>ภาพที่ 7 — หน้าประวัติก่อนเลือกพนักงาน</figcaption>
+      </figure>
+      <p>หลังโหลดสำเร็จ จะเห็นดังนี้</p>
+      <ul>
+        <li>เส้นทางบนแผนที่ (สีตามช่วงความเร็ว)</li>
+        <li>สรุปจำนวน <strong>จุด</strong>, <strong>หยุด</strong> และ <strong>พื้นที่</strong></li>
+        <li>แถบเลื่อนจุดด้านล่างของแผนที่ เพื่อไล่ดูตามเวลา</li>
+      </ul>
+      <figure class="figure">
+        <img src="images/08-history-route.png" alt="ประวัติเส้นทางหลังโหลดพร้อมสถิติและเส้นบนแผนที่" />
+        <figcaption>ภาพที่ 8 — ตัวอย่างเส้นทางหลังกดโหลด</figcaption>
+      </figure>
+      <div class="note">
+        จากหน้าตำแหน่ง สามารถกด <strong>ดูประวัติ</strong> หรือ <strong>ประวัติ</strong> ของอุปกรณ์นั้น
+        เพื่อเปิดหน้าประวัติโดยเลือกอุปกรณ์ไว้ให้แล้ว
+      </div>
+    </section>
+
+    <section id="faq" class="section">
+      <h2>6. เคล็ดลับและปัญหาที่พบบ่อย</h2>
+      <h3>ไม่เห็นอุปกรณ์บางเครื่อง</h3>
+      <p>
+        ผู้ใช้ทั่วไปเห็นเฉพาะกลุ่มที่ได้รับสิทธิ์ หากต้องการดูกลุ่มอื่น ให้ติดต่อผู้ดูแลระบบ
+      </p>
+      <h3>แผนที่ว่างหรือไม่มีจุด</h3>
+      <ul>
+        <li>ตรวจว่าตัวกรองกลุ่ม สถานะ หรือช่องค้นหา ไม่ได้ทำให้รายการว่าง</li>
+        <li>ตรวจว่ามีอินเทอร์เน็ต แล้วรีเฟรชหน้า</li>
+        <li>ถ้ายังว่างทั้งกลุ่ม ให้แจ้งผู้ดูแลระบบให้ตรวจสอบการซิงค์ข้อมูล</li>
+      </ul>
+      <h3>เข้าสู่ระบบไม่ได้</h3>
+      <ul>
+        <li>ตรวจอีเมลและรหัสผ่าน หรือใช้ <strong>ลืมรหัสผ่าน?</strong></li>
+        <li>บัญชีอาจถูกปิดใช้งาน — ติดต่อผู้ดูแลระบบ</li>
+      </ul>
+      <h3>ประวัติไม่มีเส้นทางในวันนั้น</h3>
+      <p>
+        ลองเปลี่ยนเป็นวันที่ที่มีข้อมูล หรือกด <strong>โหลด</strong> อีกครั้ง
+        บางวันอาจยังไม่มีจุดในระบบ
+      </p>
+      <h3>ใช้งานออฟไลน์ได้หรือไม่</h3>
+      <p>ต้องมีเครือข่ายในการดูแผนที่สดและประวัติ — ระบบไม่รองรับการดูพิกัดแบบออฟไลน์เต็มรูปแบบ</p>
+    </section>
+
+    <footer>
+      SiriPro GPS — คู่มือผู้ใช้ทั่วไป (Viewer) · ภาพหน้าจอจากเว็บจริง ·
+      ไม่รวมหน้าที่ผู้ดูแลระบบใช้จัดการระบบ
+    </footer>
+  </div>
+</body>
+</html>

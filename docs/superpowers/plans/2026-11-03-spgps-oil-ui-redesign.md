@@ -1,8 +1,8 @@
-# SPGPS Soft Field Station UI Redesign — Implementation Plan
+﻿# SiriPro GPS UI Redesign — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Refresh the entire SPGPS UI to the Soft Field Station direction (airy cool gray-blue surfaces, sky-blue accent, map-first workspace) without changing backend behavior.
+**Goal:** Refresh the entire SPGPS UI to the SiriPro GPS direction (airy cool gray-blue surfaces, sky-blue accent, map-first workspace) without changing backend behavior.
 
 **Architecture:** Token-first redesign — replace CSS variables and fonts at the root, then restyle shell/auth, map, history, and admin against the same language. Keep Next.js + shadcn + Leaflet; no API/auth/schema work.
 
@@ -25,7 +25,7 @@
 
 | File | Responsibility |
 |------|----------------|
-| `src/app/globals.css` | Soft Field Station tokens, map chrome, component utility classes |
+| `src/app/globals.css` | SiriPro GPS tokens, map chrome, component utility classes |
 | `src/app/layout.tsx` | Font loading (Manrope brand/UI latin + Noto Sans Thai) |
 | `tailwind.config.ts` | `fontFamily.sans` / optional `font-brand` |
 | `src/components/AppShell.tsx` | Sidebar density, wordmark, active cue |
@@ -48,16 +48,16 @@
 
 **Interfaces:**
 - Consumes: existing CSS var names (`--background`, `--primary`, `--status-*`, etc.)
-- Produces: same var names with Soft Field Station values; `--font-brand` / `--font-sans` available on `<html>`
+- Produces: same var names with SiriPro GPS values; `--font-brand` / `--font-sans` available on `<html>`
 
 - [ ] **Step 1: Replace light/dark tokens in `globals.css`**
 
-Replace the `:root` and `.dark` color blocks with Soft Field Station values (keep all existing variable **names**):
+Replace the `:root` and `.dark` color blocks with SiriPro GPS values (keep all existing variable **names**):
 
 ```css
 :root {
   color-scheme: light;
-  /* Soft Field Station — cool gray-blue surface, sky accent */
+  /* SiriPro GPS — cool gray-blue surface, sky accent */
   --background: oklch(0.975 0.008 240);
   --foreground: oklch(0.22 0.03 255);
   --card: oklch(0.99 0.005 240);
@@ -178,7 +178,7 @@ Expected: cool gray-blue surfaces (not warm paper/teal); Manrope on Latin UI tex
 ```bash
 git add src/app/globals.css src/app/layout.tsx tailwind.config.ts
 git commit -m "$(cat <<'EOF'
-style: adopt Soft Field Station tokens and Manrope fonts
+style: adopt SiriPro GPS tokens and Manrope fonts
 
 EOF
 )"
@@ -226,7 +226,7 @@ Expected: unified cool palette; wordmark distinctive; active nav = thin bar + pr
 ```bash
 git add src/components/AppShell.tsx src/components/AuthFrame.tsx src/components/ui/page-header.tsx
 git commit -m "$(cat <<'EOF'
-style: refine AppShell and AuthFrame for Soft Field Station
+style: refine AppShell and AuthFrame for SiriPro GPS
 
 EOF
 )"
@@ -281,7 +281,7 @@ Expected: status chips readable; selected device linked visually list↔pin.
 ```bash
 git add src/app/(dashboard)/map/page.tsx src/components/map/RealtimeMap.tsx src/app/globals.css
 git commit -m "$(cat <<'EOF'
-style: Soft Field Station map panel and selection motion
+style: SiriPro GPS map panel and selection motion
 
 EOF
 )"
@@ -300,7 +300,7 @@ EOF
 
 **Interfaces:**
 - Consumes: tokens, PageHeader, workspace-table
-- Produces: history/admin matching Soft Field Station without flow changes
+- Produces: history/admin matching SiriPro GPS without flow changes
 
 - [ ] **Step 1: History chrome**
 
@@ -331,7 +331,7 @@ Expected: same language as map/auth; tables calm; no teal leftovers.
 ```bash
 git add src/app/(dashboard)/history/HistoryClient.tsx src/app/admin/devices/page.tsx src/app/admin/groups/page.tsx src/app/admin/users/page.tsx src/components/ui/
 git commit -m "$(cat <<'EOF'
-style: align history and admin with Soft Field Station
+style: align history and admin with SiriPro GPS
 
 EOF
 )"
@@ -361,7 +361,7 @@ Store under `.oil-ui/spgps-soft-field/` if using oil-ui workspace; do not commit
 - [ ] **Step 3: Spec checklist**
 
 Confirm against spec success criteria:
-- [ ] Coherent Soft Field Station across surfaces
+- [ ] Coherent SiriPro GPS across surfaces
 - [ ] Map is primary on map/history
 - [ ] Status colors outrank chrome decoration
 - [ ] Behavior unchanged (login, filters, playback, admin CRUD)
@@ -371,7 +371,7 @@ Confirm against spec success criteria:
 ```bash
 git add -u
 git commit -m "$(cat <<'EOF'
-style: Soft Field Station polish across auth siblings
+style: SiriPro GPS polish across auth siblings
 
 EOF
 )"

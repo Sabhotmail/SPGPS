@@ -192,7 +192,7 @@ export function AppShell({ role, email, children, fullBleed }: Props) {
             </span>
             {!collapsed && (
               <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.22em] text-sidebar-primary">
-                Command Deck
+                SiriPro GPS
               </span>
             )}
           </Link>

@@ -1,4 +1,4 @@
-# Next.js 16 + Installable PWA — Design
+﻿# Next.js 16 + Installable PWA — Design
 
 **Date:** 2026-11-20  
 **Status:** Approved  
@@ -64,12 +64,12 @@ Caching policy
 
 ### Manifest
 
-- `name`: `SPGPS — Soft Field Station`
+- `name`: `SPGPS — SiriPro GPS`
 - `short_name`: `SPGPS`
 - `lang`: `th`
 - `start_url`: `/`
 - `display`: `standalone`
-- `background_color` / `theme_color`: brand blues aligned with Soft Field Station tokens (light shell)
+- `background_color` / `theme_color`: brand blues aligned with SiriPro GPS tokens (light shell)
 
 ### Offline page
 

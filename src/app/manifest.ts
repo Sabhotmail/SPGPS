@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "SPGPS — Soft Field Station",
+    name: "SPGPS — SiriPro GPS",
     short_name: "SPGPS",
     description: "Scalefusion GPS tracking with group-based access control",
     start_url: "/",

@@ -19,7 +19,7 @@ const notoSansThai = Noto_Sans_Thai({
 
 export const metadata: Metadata = {
   applicationName: "SPGPS",
-  title: "SPGPS — Soft Field Station",
+  title: "SPGPS — SiriPro GPS",
   description: "Scalefusion GPS tracking with group-based access control",
   appleWebApp: {
     capable: true,

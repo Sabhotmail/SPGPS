@@ -1,4 +1,4 @@
-# SPGPS Premium Ops Console — UX/UI Redesign
+﻿# SPGPS Premium Ops Console — UX/UI Redesign
 
 **Date:** 2026-11-19  
 **Status:** Approved (brainstorming + plan confirmed)  
@@ -71,5 +71,5 @@
 
 ## Related
 
-- Prior direction: Soft Field Station (`2026-11-03-spgps-oil-ui-redesign-design.md`) — evolves into Premium ops, does not discard cool-blue identity  
+- Prior direction: SiriPro GPS (`2026-11-03-spgps-oil-ui-redesign-design.md`) — evolves into Premium ops, does not discard cool-blue identity  
 - Master tokens narrative: `design-system/spgps/MASTER.md`  

@@ -5,81 +5,81 @@
 @layer base {
   :root {
     color-scheme: light;
-    /* Ink Command Deck — bright stage + ink rail + cyan signal */
-    --background: oklch(0.965 0.012 220);
-    --foreground: oklch(0.18 0.03 250);
-    --card: oklch(0.995 0.004 220);
-    --card-foreground: oklch(0.18 0.03 250);
-    --popover: oklch(0.995 0.004 220);
-    --popover-foreground: oklch(0.18 0.03 250);
-    --primary: oklch(0.52 0.14 195);
-    --primary-foreground: oklch(0.99 0.01 195);
-    --secondary: oklch(0.93 0.015 220);
-    --secondary-foreground: oklch(0.24 0.03 250);
-    --muted: oklch(0.935 0.012 220);
-    --muted-foreground: oklch(0.42 0.03 250);
-    --accent: oklch(0.92 0.04 195);
-    --accent-foreground: oklch(0.28 0.07 200);
-    --destructive: oklch(0.52 0.2 25);
-    --destructive-foreground: oklch(0.99 0 0);
-    --border: oklch(0.86 0.02 220);
-    --input: oklch(0.86 0.02 220);
-    --ring: oklch(0.55 0.12 195);
-    --radius: 0.75rem;
-    /* Ink rail stays dark in light mode — signature look */
-    --sidebar: oklch(0.2 0.035 255);
-    --sidebar-foreground: oklch(0.93 0.01 220);
-    --sidebar-primary: oklch(0.72 0.14 195);
-    --sidebar-primary-foreground: oklch(0.16 0.04 250);
-    --sidebar-accent: oklch(0.28 0.04 250);
-    --sidebar-accent-foreground: oklch(0.96 0.01 220);
-    --sidebar-border: oklch(0.3 0.03 250);
-    --sidebar-ring: oklch(0.72 0.14 195);
-    --brand: oklch(0.52 0.14 195);
-    --brand-soft: oklch(0.92 0.04 195);
+    /* SiriPro GPS — cool gray-blue wash + sky accent */
+    --background: oklch(0.975 0.008 240);
+    --foreground: oklch(0.22 0.03 255);
+    --card: oklch(0.99 0.005 240);
+    --card-foreground: oklch(0.22 0.03 255);
+    --popover: oklch(0.995 0.004 240);
+    --popover-foreground: oklch(0.22 0.03 255);
+    --primary: oklch(0.48 0.12 245);
+    --primary-foreground: oklch(0.99 0.01 245);
+    --secondary: oklch(0.945 0.01 240);
+    --secondary-foreground: oklch(0.28 0.03 255);
+    --muted: oklch(0.95 0.01 240);
+    --muted-foreground: oklch(0.45 0.02 255);
+    --accent: oklch(0.94 0.025 245);
+    --accent-foreground: oklch(0.3 0.06 250);
+    --destructive: oklch(0.52 0.19 27);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(0.88 0.012 240);
+    --input: oklch(0.88 0.012 240);
+    --ring: oklch(0.55 0.1 245);
+    --radius: 0.65rem;
+    /* Soft dark-blue rail — calmer than Ink Deck */
+    --sidebar: oklch(0.28 0.04 250);
+    --sidebar-foreground: oklch(0.96 0.008 240);
+    --sidebar-primary: oklch(0.78 0.08 245);
+    --sidebar-primary-foreground: oklch(0.2 0.04 250);
+    --sidebar-accent: oklch(0.34 0.04 250);
+    --sidebar-accent-foreground: oklch(0.97 0.008 240);
+    --sidebar-border: oklch(0.36 0.035 250);
+    --sidebar-ring: oklch(0.72 0.09 245);
+    --brand: oklch(0.48 0.12 245);
+    --brand-soft: oklch(0.94 0.025 245);
     --elevated: oklch(1 0 0);
-    --scrim: oklch(0.15 0.03 255 / 0.55);
-    --status-online: oklch(0.55 0.15 155);
-    --status-idle: oklch(0.7 0.15 75);
-    --status-offline: oklch(0.55 0.02 255);
+    --scrim: oklch(0.22 0.03 255 / 0.4);
+    --status-online: oklch(0.55 0.12 155);
+    --status-idle: oklch(0.68 0.13 75);
+    --status-offline: oklch(0.58 0.02 255);
     --font-sans: var(--font-brand);
   }
 
   .dark {
     color-scheme: dark;
-    --background: oklch(0.14 0.025 255);
-    --foreground: oklch(0.96 0.01 220);
-    --card: oklch(0.19 0.028 255);
-    --card-foreground: oklch(0.96 0.01 220);
-    --popover: oklch(0.21 0.03 255);
-    --popover-foreground: oklch(0.96 0.01 220);
-    --primary: oklch(0.75 0.14 195);
-    --primary-foreground: oklch(0.16 0.04 250);
-    --secondary: oklch(0.24 0.03 255);
-    --secondary-foreground: oklch(0.94 0.01 220);
-    --muted: oklch(0.22 0.028 255);
-    --muted-foreground: oklch(0.7 0.02 220);
-    --accent: oklch(0.26 0.05 200);
-    --accent-foreground: oklch(0.92 0.04 195);
-    --destructive: oklch(0.68 0.18 25);
-    --destructive-foreground: oklch(0.16 0.03 25);
-    --border: oklch(0.3 0.03 255);
-    --input: oklch(0.3 0.03 255);
-    --ring: oklch(0.75 0.14 195);
-    --sidebar: oklch(0.1 0.025 255);
-    --sidebar-foreground: oklch(0.92 0.01 220);
-    --sidebar-primary: oklch(0.75 0.14 195);
-    --sidebar-primary-foreground: oklch(0.14 0.04 250);
-    --sidebar-accent: oklch(0.2 0.04 250);
-    --sidebar-accent-foreground: oklch(0.96 0.01 220);
-    --sidebar-border: oklch(0.22 0.03 255);
-    --sidebar-ring: oklch(0.75 0.14 195);
-    --brand: oklch(0.75 0.14 195);
-    --brand-soft: oklch(0.26 0.05 200);
-    --elevated: oklch(0.22 0.03 255);
-    --scrim: oklch(0.05 0.02 255 / 0.7);
-    --status-online: oklch(0.78 0.14 155);
-    --status-idle: oklch(0.8 0.14 75);
+    --background: oklch(0.18 0.02 250);
+    --foreground: oklch(0.96 0.008 240);
+    --card: oklch(0.21 0.02 250);
+    --card-foreground: oklch(0.96 0.008 240);
+    --popover: oklch(0.23 0.02 250);
+    --popover-foreground: oklch(0.96 0.008 240);
+    --primary: oklch(0.78 0.1 245);
+    --primary-foreground: oklch(0.2 0.04 250);
+    --secondary: oklch(0.27 0.02 250);
+    --secondary-foreground: oklch(0.94 0.008 240);
+    --muted: oklch(0.25 0.02 250);
+    --muted-foreground: oklch(0.72 0.02 240);
+    --accent: oklch(0.28 0.035 250);
+    --accent-foreground: oklch(0.94 0.02 245);
+    --destructive: oklch(0.68 0.16 27);
+    --destructive-foreground: oklch(0.18 0.03 27);
+    --border: oklch(0.32 0.025 250);
+    --input: oklch(0.32 0.025 250);
+    --ring: oklch(0.78 0.1 245);
+    --sidebar: oklch(0.15 0.025 250);
+    --sidebar-foreground: oklch(0.94 0.008 240);
+    --sidebar-primary: oklch(0.8 0.1 245);
+    --sidebar-primary-foreground: oklch(0.16 0.04 250);
+    --sidebar-accent: oklch(0.22 0.03 250);
+    --sidebar-accent-foreground: oklch(0.96 0.008 240);
+    --sidebar-border: oklch(0.24 0.025 250);
+    --sidebar-ring: oklch(0.8 0.1 245);
+    --brand: oklch(0.78 0.1 245);
+    --brand-soft: oklch(0.28 0.035 250);
+    --elevated: oklch(0.24 0.025 250);
+    --scrim: oklch(0.08 0.02 250 / 0.65);
+    --status-online: oklch(0.78 0.12 155);
+    --status-idle: oklch(0.8 0.12 75);
     --status-offline: oklch(0.65 0.02 255);
   }
 
@@ -97,14 +97,14 @@
     font-feature-settings: "ss01", "cv11";
     background-image:
       radial-gradient(
-        900px 480px at 100% -10%,
-        color-mix(in oklch, var(--brand) 12%, transparent),
-        transparent 55%
+        820px 420px at 100% -8%,
+        color-mix(in oklch, var(--brand) 8%, transparent),
+        transparent 58%
       ),
       linear-gradient(
         180deg,
-        color-mix(in oklch, var(--background) 92%, var(--brand)),
-        var(--background) 40%
+        color-mix(in oklch, var(--background) 96%, var(--brand)),
+        var(--background) 42%
       );
     background-attachment: fixed;
   }
@@ -167,26 +167,35 @@
   }
 
   .shell-panel {
-    @apply border bg-card shadow-xl backdrop-blur-xl;
-    border-color: color-mix(in oklch, var(--border) 70%, transparent);
-    background-color: color-mix(in oklch, var(--card) 92%, transparent);
+    @apply border bg-card shadow-lg backdrop-blur-xl;
+    border-color: color-mix(in oklch, var(--border) 75%, transparent);
+    background-color: color-mix(in oklch, var(--card) 94%, transparent);
+    box-shadow: 0 16px 48px -28px rgb(30 41 59 / 0.28);
   }
 
   .glass-panel {
-    @apply border shadow-[0_12px_40px_-16px_rgba(15,23,42,0.45)] backdrop-blur-xl;
-    border-color: color-mix(in oklch, var(--border) 65%, transparent);
-    background-color: color-mix(in oklch, var(--card) 88%, transparent);
+    @apply border backdrop-blur-xl;
+    border-color: color-mix(in oklch, var(--border) 70%, transparent);
+    background-color: color-mix(in oklch, var(--card) 90%, transparent);
+    box-shadow: 0 12px 36px -20px rgb(30 41 59 / 0.32);
   }
 
   .ink-nav-active {
-    background: color-mix(in oklch, var(--sidebar-primary) 18%, transparent);
+    background: color-mix(in oklch, var(--sidebar-primary) 16%, transparent);
     color: var(--sidebar-primary);
+  }
+
+  .soft-chip {
+    @apply inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-medium;
+    border-color: color-mix(in oklch, var(--border) 80%, transparent);
+    background-color: color-mix(in oklch, var(--brand-soft) 70%, var(--card));
+    color: var(--foreground);
   }
 }
 
 .leaflet-container {
   font-family: inherit;
-  background: #e8eef3;
+  background: #e8eef5;
 }
 
 .dark .leaflet-container,

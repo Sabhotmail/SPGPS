@@ -21,7 +21,7 @@ export default function OfflinePage() {
             ไม่มีการเชื่อมต่อเครือข่าย
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Soft Field Station ต้องใช้อินเทอร์เน็ตเพื่อแสดงแผนที่และตำแหน่งอุปกรณ์
+            SiriPro GPS ต้องใช้อินเทอร์เน็ตเพื่อแสดงแผนที่และตำแหน่งอุปกรณ์
             โปรดเชื่อมต่อเครือข่ายแล้วลองอีกครั้ง
           </p>
         </div>

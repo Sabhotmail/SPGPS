@@ -1,4 +1,4 @@
-# SPGPS UI Redesign — Soft Field Station (oil-ui)
+﻿# SPGPS UI Redesign — SiriPro GPS (oil-ui)
 
 **Date:** 2026-11-03  
 **Status:** Approved for planning  
@@ -19,7 +19,7 @@
 
 ## Direction
 
-**Name:** Soft Field Station  
+**Name:** SiriPro GPS  
 
 **North star:** *Morning field station — the map is the main surface; chrome stays thin and airy; status is readable at a glance.*
 
@@ -98,7 +98,7 @@ Everything else stays quiet.
 
 ### Success criteria
 
-- One coherent Soft Field Station language across auth, map, history, admin  
+- One coherent SiriPro GPS language across auth, map, history, admin  
 - Map is the primary subject on map/history  
 - Status colors scan faster than chrome decoration  
 - Existing behavior and permissions unchanged  
