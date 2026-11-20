@@ -10,7 +10,7 @@ export default function OfflinePage() {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_520px_at_50%_0%,color-mix(in_oklch,var(--brand)_14%,transparent),transparent_60%)]"
       />
       <div className="relative mx-auto flex max-w-md flex-col items-center gap-5">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-accent text-primary">
           <WifiOff className="size-7" aria-hidden />
         </div>
         <div className="space-y-2">
