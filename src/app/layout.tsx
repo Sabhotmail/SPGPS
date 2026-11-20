@@ -1,6 +1,7 @@
 import { Outfit, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
+import { PwaProvider } from "@/components/PwaProvider";
 import { SessionProvider } from "@/components/SessionProvider";
 import { cn } from "@/lib/utils";
 
@@ -56,7 +57,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <SessionProvider>{children}</SessionProvider>
+        <PwaProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </PwaProvider>
       </body>
     </html>
   );

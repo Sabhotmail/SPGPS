@@ -1,4 +1,6 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
+import type { NextConfig } from "next";
+import { withSerwist } from "@serwist/turbopack";
 
-export default nextConfig;
+const nextConfig: NextConfig = {};
+
+export default withSerwist(nextConfig);
