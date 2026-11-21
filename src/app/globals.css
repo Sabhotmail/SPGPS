@@ -248,15 +248,21 @@
   border-width: 3px;
 }
 
-.leaflet-popup-content-wrapper {
-  @apply overflow-hidden rounded-lg border border-border bg-background shadow-md;
+.leaflet-container .leaflet-popup-content-wrapper {
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  box-shadow: 0 16px 40px -24px rgb(15 23 42 / 0.45);
   padding: 0;
 }
 
-.leaflet-popup-content {
+.leaflet-container .leaflet-popup-content {
   margin: 0 !important;
   width: auto !important;
-  @apply leading-snug;
+  color: inherit;
+  line-height: 1.375;
 }
 
 .leaflet-popup-tip-container,
@@ -265,11 +271,24 @@
 }
 
 .leaflet-container a.leaflet-popup-close-button {
-  @apply top-2 right-2 z-10 flex size-6 items-center justify-center rounded-md text-[16px] leading-none text-muted-foreground no-underline;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+  display: flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  color: var(--muted-foreground) !important;
+  font-size: 16px;
+  line-height: 1;
+  text-decoration: none;
 }
 
 .leaflet-container a.leaflet-popup-close-button:hover {
-  @apply bg-accent text-foreground;
+  background: var(--accent);
+  color: var(--foreground) !important;
 }
 
 .spgps-popup {
@@ -305,13 +324,6 @@
     @apply text-[11px];
   }
 
-  .leaflet-container .leaflet-popup-content-wrapper {
-    @apply rounded-lg;
-  }
-
-  .leaflet-container .leaflet-popup-content {
-    margin: 0 !important;
-  }
 }
 
 .spgps-popup-head {
@@ -319,11 +331,16 @@
 }
 
 .spgps-popup-title {
-  @apply text-[13px] font-semibold tracking-tight text-foreground;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
 }
 
 .spgps-popup-sub {
-  @apply mt-0.5 text-[11px] text-muted-foreground;
+  margin-top: 0.125rem;
+  font-size: 11px;
+  color: var(--muted-foreground);
 }
 
 .spgps-popup-status {
@@ -331,35 +348,63 @@
 }
 
 .spgps-popup-chip {
-  @apply rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  padding: 0.125rem 0.375rem;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted-foreground);
 }
 
 .spgps-popup-meta {
-  @apply mt-3 space-y-1.5 border-t border-border pt-3;
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
 }
 
 .spgps-popup-meta > div {
-  @apply grid grid-cols-[64px_1fr] gap-2 text-[11px];
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 0.5rem;
+  font-size: 11px;
+}
+
+.spgps-popup-meta > div + div {
+  margin-top: 0.375rem;
 }
 
 .spgps-popup-meta dt {
-  @apply text-muted-foreground;
+  color: var(--muted-foreground);
 }
 
 .spgps-popup-meta dd {
-  @apply min-w-0 break-words text-foreground;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--foreground);
 }
 
 .spgps-popup-warn {
-  @apply text-destructive;
+  color: var(--destructive);
 }
 
 .spgps-popup-actions {
-  @apply mt-3 flex items-center gap-3 border-t border-border pt-3;
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
 }
 
 .spgps-popup-actions a {
-  @apply text-[12px] font-medium text-primary underline-offset-4 hover:underline;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+  text-underline-offset: 4px;
+}
+
+.spgps-popup-actions a:hover {
+  text-decoration: underline;
 }
 
 /* Keep Base UI slider fill inside its track (avoids mobile overlap). */

@@ -221,7 +221,7 @@ export default function HistoryClient() {
 
   const statsBlock = (
     <>
-      <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-muted/70 p-1">
+      <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-2xl border border-border/50 bg-muted/60 p-1">
         <div className="rounded-xl px-2 py-2 text-center">
           <p className="text-[10px] text-muted-foreground">จุด</p>
           <p className="mt-0.5 font-semibold tabular-nums">
@@ -354,7 +354,7 @@ export default function HistoryClient() {
         className="pointer-events-none absolute inset-x-2 top-2 z-[1100] md:hidden"
         style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
       >
-        <div className="pointer-events-auto glass-panel rounded-2xl p-2.5 shadow-[0_16px_40px_-20px_rgba(15,23,42,0.5)]">
+        <div className="pointer-events-auto glass-panel rounded-2xl p-2.5">
           <div className="flex items-center gap-2">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <HistoryIcon className="size-3.5" />
@@ -431,7 +431,7 @@ export default function HistoryClient() {
 
       {/* Desktop top controls */}
       <div className="pointer-events-none absolute inset-x-auto left-3 top-3 z-[1100] hidden w-[380px] flex-col gap-2 md:flex">
-        <div className="pointer-events-auto glass-panel rounded-[1.35rem] p-4 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.55)]">
+        <div className="pointer-events-auto glass-panel rounded-[1.25rem] p-4">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">
@@ -506,10 +506,10 @@ export default function HistoryClient() {
         </div>
       )}
 
-      {/* Desktop stops drawer */}
+      {/* Desktop stops drawer — leave room above the bottom playback scrubber */}
       {stopsOpen && deviceId && (
-        <div className="pointer-events-none absolute inset-y-3 right-3 z-[1100] hidden w-[320px] md:block">
-          <FadeIn className="pointer-events-auto glass-panel flex h-full max-h-full flex-col overflow-hidden rounded-[1.35rem] shadow-[0_20px_60px_-24px_rgba(15,23,42,0.55)]">
+        <div className="pointer-events-none absolute bottom-[9.5rem] right-3 top-3 z-[1100] hidden w-[320px] md:block lg:bottom-[10.5rem]">
+          <FadeIn className="pointer-events-auto glass-panel flex h-full max-h-full flex-col overflow-hidden rounded-[1.25rem]">
             <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
               <div>
                 <p className="text-sm font-semibold">จุดที่หยุด</p>
@@ -571,10 +571,15 @@ export default function HistoryClient() {
         </div>
       )}
 
-      {/* Playback scrubber */}
-      <div className="pointer-events-none absolute inset-x-2 bottom-2 z-[1100] flex justify-center sm:inset-x-3 sm:bottom-3 md:left-[408px] md:right-3 md:justify-start">
+      {/* Playback scrubber — inset from stops drawer when open */}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-2 bottom-2 z-[1100] flex justify-center sm:inset-x-3 sm:bottom-3 md:left-[408px] md:justify-start",
+          stopsOpen ? "md:right-[348px]" : "md:right-3"
+        )}
+      >
         <FadeIn className="pointer-events-auto w-full max-w-2xl">
-          <div className="glass-panel rounded-2xl px-3 py-2.5 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.55)] sm:rounded-[1.35rem] sm:px-4 sm:py-3.5">
+          <div className="glass-panel rounded-2xl px-3 py-2.5 sm:rounded-[1.25rem] sm:px-4 sm:py-3.5">
             {locations.length > 0 && currentPoint ? (
               <>
                 <div className="mb-1.5 flex items-center justify-between gap-2 sm:mb-2">
